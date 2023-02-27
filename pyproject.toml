@@ -1,0 +1,25 @@
+[project]
+name = "cora"
+version = "0.0.0"
+description = "An interactive exploration tool for cold-water coral segmentation."
+readme = "README.md"
+requires-python = ">= 3.9"
+classifiers = [
+    "Programming Language :: Python :: 3"
+]
+dependencies = [
+    "bokeh",
+    "aiohttp",
+    "aiohttp-jinja2",
+    "numpy",
+    "scipy",
+    "pandas",
+    "networkx",
+    "../py_ipc"
+]
+
+[project.urls]
+"Homepage" = "https://git.zib.de/bschmitt/py_cora.git"
+
+[tool.setuptools]
+packages = ["cora"]
