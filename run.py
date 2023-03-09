@@ -10,10 +10,15 @@ import argparse
 import asyncio
 import pathlib
 import sys
+import shutil
 
 import aiohttp
 
-import cora.app
+try:
+    from cora.app import create_app
+except ImportError:
+    from .cora.app import create_app
+
 
 # Check the command line for the instance directory.
 this_dir = pathlib.Path(__file__).absolute().parent
@@ -28,8 +33,11 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# Restore the original test data.
+shutil.copytree(this_dir / "instance" / "data_copy", this_dir / "instance" / "data", dirs_exist_ok=True)
+
 # Create the WSGI application.
-app = asyncio.run(cora.app.create_app(args.instance_dir))
+app = asyncio.run(create_app(args.instance_dir))
 
 
 if __name__ == "__main__":

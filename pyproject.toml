@@ -10,12 +10,14 @@ classifiers = [
 dependencies = [
     "bokeh",
     "aiohttp",
+    "aiohttp-devtools",
     "aiohttp-jinja2",
     "numpy",
     "scipy",
     "pandas",
     "networkx",
-    "../py_ipc"
+    "umap-learn",
+    "sklearn"
 ]
 
 [project.urls]
