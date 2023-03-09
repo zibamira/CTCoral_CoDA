@@ -63,40 +63,56 @@ ipc_features.df["label"] = np.random.randint(0, 5, ipc_features.df.shape[0]).ast
 print(ipc_features.df["label"])
 
 
+features_df = ipc_features.df
+features_columns = ["Volume3d", "Area3d", "BaryCenterZ", "label"]
+features_bokeh = bokeh.models.ColumnDataSource(features_df)
+
+
+def splom_selection_callback():
+    """Called when the user selection changes."""
+
+
+    return None
+
+
 def features_splom():
     """Shows a scatterplot matrix (SPLOM) for the selected
     raw features of the :data:`ipc_features` spreadsheet.
     """
-    df = pd.DataFrame(ipc_features.df)
-    #df = df.select_dtypes("number")
+    global features_bokeh, features_df, features_columns
 
-    df = df[["Volume3d", "Area3d", "BaryCenterZ", "label"]]
+    df = features_df
+    source = features_bokeh
 
-    ncolumns = len(df.columns) - 1
-    source = bokeh.models.ColumnDataSource(df)
+    columns = features_columns
+    ncolumns = len(columns) - 1
+
+    print(df)
 
     # Create the ranges.
     x_ranges = []
     y_ranges = []
     for i in range(ncolumns):
-        df_column = df[df.columns[i]]
+        column = columns[i]
+        df_column = df[column]
         vmin = df_column.min()
         vmax = df_column.max()
-        x_ranges.append(bokeh.models.Range1d(vmin, vmax, bounds=(vmin, vmax), name=f"x_range_{df.columns[i]}"))
-        y_ranges.append(bokeh.models.Range1d(vmin, vmax, bounds=(vmin, vmax), name=f"y_range_{df.columns[i]}"))
+        x_ranges.append(bokeh.models.Range1d(vmin, vmax, bounds=(vmin, vmax), name=f"x_range_{column}"))
+        y_ranges.append(bokeh.models.Range1d(vmin, vmax, bounds=(vmin, vmax), name=f"y_range_{column}"))
 
     # Create the axes.
     x_axes = []
     y_axes = []
     for i in range(ncolumns):
-        df_column = df[df.columns[i]]
+        column = columns[i]
+        df_column = df[column]
         x_axis = bokeh.models.LinearAxis(
             axis_label=df.columns[i],
-            x_range_name=f"x_range_{df.columns[i]}"
+            x_range_name=f"x_range_{column}"
         )
         y_axis = bokeh.models.LinearAxis(
             axis_label=df.columns[i],
-            y_range_name=f"y_range_{df.columns[i]}"
+            y_range_name=f"y_range_{column}"
         )
         x_axes.append(x_axis)
         y_axes.append(y_axis)
@@ -129,7 +145,7 @@ def features_splom():
 
             if irow == icol:
                 
-                xvalues = df[df.columns[icol]]
+                xvalues = df[columns[icol]]
                 xmin = xvalues.min()
                 xmax = xvalues.max()
                 xrange = (xmin, xmax)
@@ -191,7 +207,6 @@ def features_splom():
                 p.xgrid.visible = False
                 p.ygrid.visible = False
 
-
             elif icol > irow:
                 p = bokeh.plotting.figure(
                     width=250, height=250, x_range=x_range, y_range=y_range,
@@ -201,7 +216,7 @@ def features_splom():
                 p.yaxis.visible = False
 
                 p.scatter(
-                    source=source, x=df.columns[icol], y=df.columns[irow], alpha=0.8, size=4.0,
+                    source=source, x=columns[icol], y=columns[irow], alpha=0.8, size=4.0,
                     color=colormap
                 )
 
@@ -248,16 +263,20 @@ def features_splom():
 
 def features_table():
     """Shows the :data:`ipc_spreadsheet` raw features as a spreadsheet."""
-    df = ipc_features.df
-    df = df[["Volume3d", "Area3d", "index", "BaryCenterZ"]]
+    global features_df, features_bokeh
 
-    source = bokeh.models.ColumnDataSource(df)
+    df = features_df
+    source = features_bokeh
+    columns = features_columns
+
 
     columns = [
-        bokeh.models.TableColumn(field=name, title=name) for name in df.columns
+        bokeh.models.TableColumn(field=name, title=name) for name in columns
     ]
     data_table = bokeh.models.DataTable(
-        source=source, width=400, columns=columns, sizing_mode="stretch_height"
+        source=source, columns=columns, sizing_mode="stretch_both",
+        selectable=True, sortable=True, syncable=True, autosize_mode="fit_columns",
+        scroll_to_selection=True
     )
     return data_table
 
@@ -384,7 +403,7 @@ tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=graph(), title="Graph"),
     bokeh.models.TabPanel(child=graph_vertex_table(), title="Graph Vertex Table"),
     bokeh.models.TabPanel(child=graph_edge_table(), title="Graph Edge Table")
-], active=0)
+], active=1, sizing_mode="stretch_both")
 
 document = bokeh.plotting.curdoc()
 document.add_root(tabs)
