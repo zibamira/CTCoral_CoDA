@@ -2,8 +2,10 @@ bokeh
 matplotlib
 numpy 
 scipy
-skimage
+scikit-image
 sklearn
 networkx
 pandas
 agraph
+umap-learn
+pydot

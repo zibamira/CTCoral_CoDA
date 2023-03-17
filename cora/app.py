@@ -304,10 +304,12 @@ def features_table():
     columns = features_columns
     
     # Create a column for each feature.
-    table_columns = [bokeh.models.TableColumn(field=name, title=name) for name in columns]
+    table_columns = [
+        bokeh.models.TableColumn(field=name, title=name) for name in columns
+    ]
     table = bokeh.models.DataTable(
         source=source, columns=table_columns, sizing_mode="stretch_both",
-        selectable=True, sortable=True, syncable=True, autosize_mode="fit_columns",
+        selectable=True, sortable=True, syncable=True,
         scroll_to_selection=True, reorderable=True
     )
     return table
@@ -451,6 +453,8 @@ def graph_edge_table():
     return table
 
 
+# splom = features_splom()
+
 tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=features_splom(), title="Features SPLOM"),
     bokeh.models.TabPanel(child=features_table(), title="Features Table"),
@@ -459,7 +463,7 @@ tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=graph(), title="Graph"),
     bokeh.models.TabPanel(child=graph_vertex_table(), title="Graph Vertex Table"),
     bokeh.models.TabPanel(child=graph_edge_table(), title="Graph Edge Table")
-], active=4, sizing_mode="stretch_both", syncable=True)
+], active=0, sizing_mode="stretch_both", syncable=True)
 
 document = bokeh.plotting.curdoc()
 document.add_root(tabs)
