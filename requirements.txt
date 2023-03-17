@@ -1,0 +1,9 @@
+bokeh
+matplotlib
+numpy 
+scipy
+skimage
+sklearn
+networkx
+pandas
+agraph

@@ -22,6 +22,35 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
     and updated automatic in the frontend. The features are visualized in 
     a scatter plot. 
 
+## ToDo
+
+*   UMap
+    *   Implement the dimensionality reduction
+    *   Implement the SPLOM plot
+    *   Implement the table view of the factors
+*   UI Widgets
+    *   Add widgets for selecting the glyph label field
+    *   Add widgets for selecting the color label field
+    *   Add widgets for selecting the features used in UMap
+    *   Add widgets for selecting the features show in the SPLOM plot
+    *   Add widgets for recomputing the spring layout
+*   Refactoring
+    *   Refactor the plots into dedicated modules
+*   Link and Brush
+    *   Use a single data source whenever possible
+    *   Add a watchdog to the Python py_ipc package
+    *   Add an ROI seeking function to the Amira hx_shmem package so that
+        we can jump to the 3D location when a single instance is selected
+        in Bokeh
+*   Graph   
+    *   Add a recompute button for the spring layout
+    *   Add a save button for the currently shown layout
+    *   Add a button for selecting the current connected component if there 
+        are multiple available
+    *   Color the edges depending on their orienation, e.g.
+        black: top -> bottom, everything else red
+    *   Add a selection tool and link it with other views
+
 ## Usage
 
 Please take a look at the [examples/](./examples) folder for examples. You should already be familiar with NumPy.

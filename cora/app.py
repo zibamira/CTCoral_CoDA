@@ -7,13 +7,16 @@ Bootstraps and launches the Bokeh application.
 import sys
 sys.path.insert(1, "/srv/public/bschmitt/py_ipc")
 
+import itertools
 import logging
 import pathlib
+from pprint import pprint   
 import shutil
 
 import bokeh
 import bokeh.plotting
 import bokeh.model
+import bokeh.models
 import bokeh.layouts
 
 import hxipc as amira
@@ -34,7 +37,7 @@ def init_logging():
     console.setLevel(logging.NOTSET)    
     console.setFormatter(formatter)
 
-    logging.basicConfig(handlers=[console], level=logging.DEBUG)
+    logging.basicConfig(handlers=[console], level=logging.INFO)
     return None
     
 init_logging()
@@ -62,12 +65,55 @@ ipc_features.df["label"] = np.random.randint(0, 5, ipc_features.df.shape[0]).ast
 
 # Choose the currently active columns.
 features_df = ipc_features.df
-features_columns = ["Volume3d", "Area3d", "BaryCenterZ", "label"]
+features_columns = ["Volume3d", "VoxelFaceArea", "BaryCenterZ", "label"]
 features_bokeh = bokeh.models.ColumnDataSource(features_df)
 
+# Create an IPC sink for the selection mask.
+print("Creating output sinks.")
+ipc_selection = amira.data.array(
+    data_dir / "mask.json", mode="w", shape=ipc_segmentation.array.shape,
+    bounding_box=ipc_segmentation.bounding_box, dtype=np.uint8
+)
 
-def features_splom_selection_callback():
+
+import time
+import threading
+
+
+_last_update = time.time()
+def update_thread():
+    """Checks periodically if the current Bokeh selection changed
+    and propagates the changes to Amira.
+    """
+    global _last_update
+    while True:
+        print("CHECK FIRE")
+        if _last_update is None:
+            return None
+        elif abs(time.time() - _last_update) > 0.5:
+            ipc_selection.ipc_write()
+            _last_update = None
+            print("FIRE")
+        time.sleep(0.5)
+    return None
+
+
+# thread0 = threading.Thread(target=update_thread, daemon=True).start()
+
+
+def features_splom_selection_callback(attr, old, new):
     """Called when the user selection changes."""
+    global _last_update
+    print("callback")
+    # print("  attr", attr)
+    # print("  old ", old)
+    # print("  new ", new)
+    # if _last_update is None or time.time() - _last_update > 1:
+    #     print("Write")
+    #     mask = np.isin(ipc_segmentation.array, new, assume_unique=True)
+    #     ipc_selection.array[:] = mask.astype("u8")
+    #     ipc_selection.ipc_write()
+    #     _last_update = time.time()
     return None
 
 
@@ -84,6 +130,9 @@ def features_splom():
     source = features_bokeh
     columns = features_columns
     ncolumns = len(columns) - 1
+
+    # Wait for changes in the selection.
+    source.selected.on_change("indices", features_splom_selection_callback)
 
     # Create the ranges.
     x_ranges = []
@@ -180,11 +229,13 @@ def features_splom():
             elif icol > irow:
                 p = bokeh.plotting.figure(
                     width=250, height=250, x_range=x_range, y_range=y_range,
-                    tools="pan,lasso_select,box_zoom,wheel_zoom,reset,hover"
+                    tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover",
+                    syncable=True
                 )
                 p.scatter(
                     source=source, x=columns[icol], y=columns[irow], 
-                    color=colormap, alpha=0.6, size=8.0
+                    color=colormap, alpha=0.6, size=8.0,
+                    syncable=True
                     
                 )
                 p.xaxis.visible = False
@@ -208,7 +259,7 @@ def features_splom():
         p.xgrid.visible = False
         p.ygrid.visible = False
 
-        p.yaxis.axis_label = df.columns[irow]
+        p.yaxis.axis_label = columns[irow]
         p.yaxis.ticker.desired_num_ticks = 4
         grid[irow].append(p)
 
@@ -226,7 +277,7 @@ def features_splom():
         p.xgrid.visible = False
         p.ygrid.visible = False
 
-        p.xaxis.axis_label = df.columns[icol]
+        p.xaxis.axis_label = columns[icol]
         p.xaxis.ticker.desired_num_ticks = 4
         grid[0].append(p)
 
@@ -255,7 +306,7 @@ def features_table():
     # Create a column for each feature.
     table_columns = [bokeh.models.TableColumn(field=name, title=name) for name in columns]
     table = bokeh.models.DataTable(
-        source=source, columns=columns, sizing_mode="stretch_both",
+        source=source, columns=table_columns, sizing_mode="stretch_both",
         selectable=True, sortable=True, syncable=True, autosize_mode="fit_columns",
         scroll_to_selection=True, reorderable=True
     )
@@ -281,28 +332,91 @@ def umap_table():
     return p
 
 
+# ---- graph ----
+
+
 def graph():
-    """Shows the coral connectivity in a graph."""
-    # TODO: Check if there are multiple components.
-    #       and color, as well as layout them individually.
+    """Draws the coral connectivity graph. The result is a dendrogram."""
+    nxgraph = ipc_connectivity.graph
 
-    # TODO: Use the same colormap as in Amira.
-    # TODO: Add tooltips for edge attributes
-    # TODO: Add a selection tool (select vertices)
-    # TODO: Add tooltips to the attributes.
-    # TODO: Create a custom plot for each connected components,
-    #       or add a dropdown.
+    # Layout
+    def scale_layout(flayout):
+        """Decorates a layout function so that the returned positions
+        will be normalized, i.e. they are centered at the origin and
+        scaled to [-1, 1]^2.
+        """
+        def wrapped(*args, **kargs):
+            pos = flayout(*args, **kargs)
+            pos = np.array(list(pos.values()))
+            pos -= np.mean(pos, axis=0)
+            pos /= np.std(pos, axis=0)
+            pos = {i: pos[i] for i in range(pos.shape[0])}
+            return pos
+        return wrapped
+        
+    layout = "dot"
+    if layout == "dot":
+        graph = bokeh.plotting.from_networkx(
+            nxgraph, scale_layout(nx.drawing.nx_pydot.graphviz_layout), 
+            prog="dot"
+        )
+    elif layout == "twopi":
+        graph = bokeh.plotting.from_networkx(
+            nxgraph, scale_layout(nx.drawing.nx_pydot.graphviz_layout), 
+            prog="twopi"
+        )
+    elif layout == "circo":
+        graph = bokeh.plotting.from_networkx(
+            nxgraph, scale_layout(nx.drawing.nx_pydot.graphviz_layout), 
+            prog="circo"
+        )
+    else:
+        graph = bokeh.plotting.from_networkx(
+            nxgraph, scale_layout(nx.drawing.spring_layout)
+        )
 
-    graph = bokeh.plotting.from_networkx(
-        ipc_connectivity.graph, nx.spring_layout, scale=1.8, center=(0.0, 0.0)
+    source_nodes = graph.node_renderer.data_source
+    source_edges = graph.edge_renderer.data_source
+
+    # Colormap
+    #
+    # * factor_cmap: the label must be of type "str"
+    # * factor_cmap: the color palette must be large enogough
+    labels = [str(e[0]) for e in source_nodes.data["label"]]
+    labels_unique = np.sort(np.unique(labels))
+
+    palette = itertools.cycle(bokeh.palettes.Spectral11)
+    palette = [next(palette) for i in labels_unique]
+
+    colormap = bokeh.transform.factor_cmap(
+        "label", palette=palette, factors=labels_unique,
     )
-    graph.node_renderer.data_source.data["index"] = list(range(len(ipc_connectivity.graph)))
-    graph.node_renderer.glyph = bokeh.models.Rect(width=0.1, height=0.1, fill_color="yellow")
-    
+
+    # node renderer
+
+    source_nodes.data["label"] = labels
+    graph.node_renderer.glyph = bokeh.models.Ellipse(
+        width=0.2, height=0.2, fill_color=colormap
+    )
+    graph.inspection_policy = bokeh.models.NodesOnly()
+
+    # edge renderer
+
+    graph.edge_renderer.selection_glyph = bokeh.models.MultiLine(line_color="blue", line_width=5)
+    graph.edge_renderer.hover_glyph = bokeh.models.MultiLine(line_color="red", line_width=10)
+
+    # plot 
+
     p = bokeh.plotting.figure(
-        x_range=(-2, 2), y_range=(-2, 2),
-        x_axis_location=None, y_axis_location=None,
-        tools="hover", tooltips="index: index"
+        tooltips=[
+            ("index", "@index"),
+            ("label", "@label"),
+            ("generation", "@shortest_distance")
+        ],
+        sizing_mode="scale_both",
+        match_aspect=True,
+        x_axis_location=None,
+        y_axis_location=None
     )
     p.grid.grid_line_color = None
     p.renderers.append(graph)
@@ -337,45 +451,6 @@ def graph_edge_table():
     return table
 
 
-# Splom:
-#       Scatter plots for numerical data
-#       Histogram for numerical + discrete (labels)
-
-# Umap:
-#       Simple Splom
-
-# DataTable
-#       Table view of the features
-
-# GraphView
-#       Graph Rendering of the connectivity
-
-# Feature selection
-#       Features to display
-#       Labels to overlay with
-#           Color encode class or use different glyphs?
-#           Numerical Class: Color
-#       Also: Is categorical vs is numeric.
-
-# Image / Mesh Preview?
-#       Could also be an annotation/tooltip
-
-# Page
-#       Sidebar: Feature Selection
-#       Mainview: Tabwidget
-#           different plots and visualizations
-
-i = 0 
-def callback():
-    global i
-    print("CALLBACK !", 2*i)
-    i += 1
-    return None
-
-
-button = bokeh.models.Button(label="Hit me!")
-button.on_click(callback)
-
 tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=features_splom(), title="Features SPLOM"),
     bokeh.models.TabPanel(child=features_table(), title="Features Table"),
@@ -384,7 +459,7 @@ tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=graph(), title="Graph"),
     bokeh.models.TabPanel(child=graph_vertex_table(), title="Graph Vertex Table"),
     bokeh.models.TabPanel(child=graph_edge_table(), title="Graph Edge Table")
-], active=0, sizing_mode="stretch_both")
+], active=4, sizing_mode="stretch_both", syncable=True)
 
 document = bokeh.plotting.curdoc()
 document.add_root(tabs)
