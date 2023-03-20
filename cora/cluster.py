@@ -37,6 +37,7 @@ __all__ = [
 
 #: The sklearn compatible embedder.
 reducer = None
+embedding = None
 
 
 def selection_callback(attr, old, new):
@@ -134,5 +135,20 @@ def table(
     This view is mostly for completness and usually not of
     particular interest. At least for the UMAP embedding.
     """
-    p = bokeh.plotting.figure()
-    return p
+    global embedding
+    
+    data = {f"component {i}": embedding[:, i] for i in range(embedding.shape[1])}
+    source = bokeh.models.ColumnDataSource(data)
+
+    # Create a column for each component.
+    table_columns = [
+        bokeh.models.TableColumn(field=name, title=name) for name in data.keys()
+    ]
+
+    # Put everything together.
+    table = bokeh.models.DataTable(
+        source=source, columns=table_columns, sizing_mode="stretch_both",
+        selectable=True, sortable=True, syncable=True,
+        scroll_to_selection=True, reorderable=True
+    )
+    return table
