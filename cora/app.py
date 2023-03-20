@@ -31,6 +31,7 @@ import sklearn.preprocessing
 import umap
 
 import features
+import cluster
 
 # Logger configuration
 def init_logging():
@@ -99,65 +100,6 @@ def update_thread():
             print("FIRE")
         time.sleep(0.5)
     return None
-
-
-# thread0 = threading.Thread(target=update_thread, daemon=True).start()
-
-
-def umap_thread():
-    """Runs UMAP in the background whenenver the data changes or features
-    are added or removed.
-    """
-    return None
-
-
-def umap_splom():
-    """Shows the UMAP components in a SPLOM."""
-    global features_df
-    global features_columns
-
-    # Select the colums with the features of interest and filter out
-    # non-numeric columns.
-    df = features_df[features_columns]
-    df = df.select_dtypes(include=np.number)
-    values = df.values
-
-    # Normalize the data by rescaling.
-    scaler = sklearn.preprocessing.StandardScaler()
-    values = scaler.fit_transform(values)
-
-    # Run UMAP.
-    reducer = umap.UMAP(n_neighbors=10, min_dist=0.1, n_components=4)
-    # reducer = sklearn.decomposition.PCA()
-    embedding = reducer.fit_transform(values)
-    
-    print(embedding.shape)
-    embedding.shape
-
-    # Plot the embedding.
-    plots = []
-    for irow in range(embedding.shape[1]):
-        for icol in range(embedding.shape[1]):
-            if icol < irow:
-                plots.append(None)
-            elif icol == irow:
-                pass
-            else:
-                p = bokeh.plotting.figure(width=250, height=250)
-                p.scatter(embedding[:, irow], embedding[:, icol])
-                plots.append(p)
-
-    grid = bokeh.layouts.gridplot(
-        plots, ncols=embedding.shape[1]
-    )
-    grid.toolbar_location = "right"
-    return grid
-
-
-def umap_table():
-    """Shows the UMAP components in a dedicated table."""
-    p = bokeh.plotting.figure()
-    return p
 
 
 # ---- graph ----
@@ -286,11 +228,16 @@ def graph_edge_table():
 features_splom = features.splom(features_df, features_bokeh, features_columns)
 features_table = features.table(features_df, features_bokeh, features_columns)
 
+cluster.create_reducer(mode="PCA")
+cluster.fit_reduction(features_df, features_columns)
+cluster_splom = cluster.splom(features_df, features_columns)
+cluster_table = cluster.table(features_df, features_columns)
+
 tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=features_splom, title="Features SPLOM"),
     bokeh.models.TabPanel(child=features_table, title="Features Table"),
-    bokeh.models.TabPanel(child=umap_splom(), title="UMAP SPLOM"),
-    bokeh.models.TabPanel(child=umap_table(), title="UMAP Table"),
+    bokeh.models.TabPanel(child=cluster_splom, title="UMAP SPLOM"),
+    bokeh.models.TabPanel(child=cluster_table, title="UMAP Table"),
     bokeh.models.TabPanel(child=graph(), title="Graph"),
     bokeh.models.TabPanel(child=graph_vertex_table(), title="Graph Vertex Table"),
     bokeh.models.TabPanel(child=graph_edge_table(), title="Graph Edge Table")

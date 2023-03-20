@@ -27,7 +27,6 @@ __all__ = [
 
 def selection_callback(attr, old, new):
     """Called when the user selection changes."""
-    global _last_update
     print("callback")
     # print("  attr", attr)
     # print("  old ", old)
