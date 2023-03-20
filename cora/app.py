@@ -27,6 +27,8 @@ import numpy as np
 import scipy as sp
 import networkx as nx
 import sklearn
+import sklearn.preprocessing
+import umap
 
 
 # Logger configuration
@@ -65,7 +67,7 @@ ipc_features.df["label"] = np.random.randint(0, 5, ipc_features.df.shape[0]).ast
 
 # Choose the currently active columns.
 features_df = ipc_features.df
-features_columns = ["Volume3d", "VoxelFaceArea", "BaryCenterZ", "label"]
+features_columns = ["Volume3d", "VoxelFaceArea", "Anisotropy", "Flatness", "Elongation", "label"]
 features_bokeh = bokeh.models.ColumnDataSource(features_df)
 
 # Create an IPC sink for the selection mask.
@@ -324,8 +326,45 @@ def umap_thread():
 
 def umap_splom():
     """Shows the UMAP components in a SPLOM."""
-    p = bokeh.plotting.figure()
-    return p
+    global features_df
+    global features_columns
+
+    # Select the colums with the features of interest and filter out
+    # non-numeric columns.
+    df = features_df[features_columns]
+    df = df.select_dtypes(include=np.number)
+    values = df.values
+
+    # Normalize the data by rescaling.
+    scaler = sklearn.preprocessing.StandardScaler()
+    values = scaler.fit_transform(values)
+
+    # Run UMAP.
+    reducer = umap.UMAP(n_neighbors=10, min_dist=0.1, n_components=4)
+    # reducer = sklearn.decomposition.PCA()
+    embedding = reducer.fit_transform(values)
+    
+    print(embedding.shape)
+    embedding.shape
+
+    # Plot the embedding.
+    plots = []
+    for irow in range(embedding.shape[1]):
+        for icol in range(embedding.shape[1]):
+            if icol < irow:
+                plots.append(None)
+            elif icol == irow:
+                pass
+            else:
+                p = bokeh.plotting.figure(width=250, height=250)
+                p.scatter(embedding[:, irow], embedding[:, icol])
+                plots.append(p)
+
+    grid = bokeh.layouts.gridplot(
+        plots, ncols=embedding.shape[1]
+    )
+    grid.toolbar_location = "right"
+    return grid
 
 
 def umap_table():
@@ -408,6 +447,8 @@ def graph():
     graph.edge_renderer.hover_glyph = bokeh.models.MultiLine(line_color="red", line_width=10)
 
     # plot 
+    # x_range = bokeh.models.Range1d(-2.0, 2.0, bounds=())
+    # x_axis = bokeh.models.LinearAxis()
 
     p = bokeh.plotting.figure(
         tooltips=[
@@ -418,9 +459,11 @@ def graph():
         sizing_mode="scale_both",
         match_aspect=True,
         x_axis_location=None,
-        y_axis_location=None
+        y_axis_location=None,
+
     )
     p.grid.grid_line_color = None
+    p.xaxis.bounds = ()
     p.renderers.append(graph)
     return p
 
@@ -453,8 +496,6 @@ def graph_edge_table():
     return table
 
 
-# splom = features_splom()
-
 tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=features_splom(), title="Features SPLOM"),
     bokeh.models.TabPanel(child=features_table(), title="Features Table"),
@@ -467,3 +508,7 @@ tabs = bokeh.models.Tabs(tabs=[
 
 document = bokeh.plotting.curdoc()
 document.add_root(tabs)
+
+# document.add_root(
+#     umap_splom()
+# )
