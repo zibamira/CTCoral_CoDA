@@ -25,6 +25,8 @@ import sklearn.preprocessing
 import sklearn.pipeline
 import umap
 
+from splom import splom as SplomPlot
+
 
 __all__ = [
     "selection_callback",
@@ -106,23 +108,20 @@ def splom(
 ):
     """Shows a SPLOM plot of the computed embedding."""
     global embedding
-    
-    # Create a SPLOM with the desired number of components.
-    plots = []
-    for irow in range(embedding.shape[1]):
-        for icol in range(embedding.shape[1]):
-            if icol < irow:
-                plots.append(None)
-            elif icol == irow:
-                pass
-            else:
-                p = bokeh.plotting.figure(width=250, height=250)
-                p.scatter(embedding[:, irow], embedding[:, icol])
-                plots.append(p)
 
-    grid = bokeh.layouts.gridplot(plots, ncols=embedding.shape[1])
-    grid.toolbar_location = "right"
-    return grid
+    columns = [f"col {i}" for i in range(embedding.shape[1])]
+    # print(embedding)
+    # print(columns)
+    # print(embedding.shape)
+
+    print("Creating df ....")
+    df = pd.DataFrame(embedding, columns=columns)
+
+    print("creating source ...")
+    source = bokeh.models.ColumnDataSource(df)
+
+    p = SplomPlot(df, source, columns)
+    return p
 
 
 def table(

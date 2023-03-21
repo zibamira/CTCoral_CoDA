@@ -241,7 +241,7 @@ tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=graph(), title="Graph"),
     bokeh.models.TabPanel(child=graph_vertex_table(), title="Graph Vertex Table"),
     bokeh.models.TabPanel(child=graph_edge_table(), title="Graph Edge Table")
-], active=0, sizing_mode="stretch_both", syncable=True)
+], active=2, sizing_mode="stretch_both", syncable=True)
 
 document = bokeh.plotting.curdoc()
 document.add_root(tabs)
