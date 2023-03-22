@@ -76,6 +76,7 @@ class Splom(object):
     def init(self):
         """Creates the plots."""
         self.init_colormap()
+        self.init_glyphmap()
         self.init_ranges()
         self.init_axes_plots()
         # self.init_histogram()
@@ -118,6 +119,49 @@ class Splom(object):
             palette=bokeh.palettes.Spectral5, 
             factors=self._colormap_unique_labels.astype(str)
         )
+        return None
+    
+    def init_glyphmap(self):
+        """Intialises the glyph map based on the :attr:`glyph` column."""
+        if not self.glyph_column_name:
+            self.glyphmap = "circle"
+            return None
+        
+        # Get the label column, make them unique and convert them to strings
+        # and eventually add them to the Bokeh data source.
+        #
+        # The Bokeh *factor_cmap* seems to only support string columns, so we
+        # have to convert if for the moment being.
+        labels = self._df[self.glyph_column_name]
+        self._glyphmap_unique_labels = np.array(natsort.natsorted(np.unique(labels)))
+
+        # Map the label to a unique id.
+        markers = [
+            "asterisk",
+            "circle",
+            "cross",
+            "diamond",
+            "hex",
+            "inverted_triangle",
+            "plus",
+            "square",
+            "star",
+            "triangle"
+        ]
+        self._glyphmap_label_to_glyph = {
+            label: glyph \
+            for glyph, label in zip(markers, self._glyphmap_unique_labels)
+        }
+
+        # Create a new column which contains the unique (numeric) label id for each
+        # data sample additionally to the original label column.
+        self._glyphmap_label_ids = np.array([
+            self._glyphmap_label_to_glyph[label] for label in labels
+        ])
+
+        # Use the labels (classes) as colormap.
+        self._source.add(self._glyphmap_label_ids, "_glyph")
+        self.glyphmap="_glyph"
         return None
 
     def init_ranges(self):
@@ -314,7 +358,8 @@ class Splom(object):
             color=self.colormap, 
             alpha=0.6, 
             size=8.0,
-            syncable=True
+            syncable=True,
+            marker=self.glyphmap
             
         )
         p.xaxis.visible = False
@@ -382,5 +427,6 @@ def splom(
     splom._source = source
     splom.plot_column_names = columns
     splom.colormap_column_name = label_column_name
+    splom.glyph_column_name = label_column_name
     splom.init()
     return splom.grid
