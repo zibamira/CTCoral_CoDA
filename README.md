@@ -51,6 +51,11 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
         black: top -> bottom, everything else red
     *   Add a selection tool and link it with other views
 
+## ToDo Next
+
+*   Create the SPLOM class
+*   Factor out the code for the *graph* codes.
+
 ## Usage
 
 Please take a look at the [examples/](./examples) folder for examples. You should already be familiar with NumPy.

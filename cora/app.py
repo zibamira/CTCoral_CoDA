@@ -69,7 +69,7 @@ ipc_features.df["label"] = np.random.randint(0, 5, ipc_features.df.shape[0]).ast
 
 # Choose the currently active columns.
 features_df = ipc_features.df
-features_columns = ["Volume3d", "VoxelFaceArea", "Anisotropy", "Flatness", "Elongation", "label"]
+features_columns = ["Volume3d", "VoxelFaceArea", "Anisotropy", "Flatness", "Elongation"]
 features_bokeh = bokeh.models.ColumnDataSource(features_df)
 
 # Create an IPC sink for the selection mask.
