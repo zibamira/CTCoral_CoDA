@@ -42,8 +42,6 @@ class Splom(object):
         self._source = None
 
         self.plot_column_names = []
-        self.colormap_column_name = ""
-        self.glyph_column_name = ""
         self.size_column_name = ""
 
         # shared x and y ranges
@@ -51,11 +49,20 @@ class Splom(object):
         self.y_ranges = dict()
         
         # colormap depending on the label
+        self.colormap_column_name = ""
         self.colormap = "blue"
 
         self._colormap_unique_labels = None
         self._colormap_label_ids = None
         self._colormap_label_to_id = None
+
+        # glyph depending on a label field
+        self.glyph_column_name = ""
+        self.glyphmap = "circle"
+        
+        self._glyphmap_unique_labels = None
+        self._glyphmap_label_to_glyph = None
+        self._glyphmap_column = None
 
         # column name -> x axis dummy plot
         self.x_axes_plots = dict()
@@ -155,12 +162,12 @@ class Splom(object):
 
         # Create a new column which contains the unique (numeric) label id for each
         # data sample additionally to the original label column.
-        self._glyphmap_label_ids = np.array([
+        self._glyphmap_column = np.array([
             self._glyphmap_label_to_glyph[label] for label in labels
         ])
 
         # Use the labels (classes) as colormap.
-        self._source.add(self._glyphmap_label_ids, "_glyph")
+        self._source.add(self._glyphmap_column, "_glyph")
         self.glyphmap="_glyph"
         return None
 
@@ -400,7 +407,7 @@ class Splom(object):
                 grid.append(p)
 
             # The shared y-axis is the last plot in a row.
-            grid.append(self.y_axes_plots[column_name_y])
+            grid.append(self.y_axes_plots[column_name_y])       
 
         # Create the actual bokeh grid layout.
         self.grid = bokeh.layouts.gridplot(grid, ncols=len(self.plot_column_names) + 1)
