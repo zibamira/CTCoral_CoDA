@@ -189,11 +189,11 @@ class Graph(object):
         # Create the node renderer.
         node_renderer = bokeh.models.GlyphRenderer(data_source=self.vertex_source)
         node_renderer.glyph = bokeh.models.Circle(
-            radius=0.1, fill_color=self.colormap, 
+            size=24, fill_color=self.colormap, 
             line_width=2, line_color="grey"
         )
         node_renderer.hover_glyph = bokeh.models.Circle(
-            radius=0.1, fill_color=self.colormap, 
+            size=24, fill_color=self.colormap, 
             line_width=4, line_color="black"
         )
 
