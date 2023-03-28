@@ -32,6 +32,8 @@ import umap
 
 import features
 import cluster
+import graph
+
 
 # Logger configuration
 def init_logging():
@@ -102,150 +104,40 @@ def update_thread():
     return None
 
 
-# ---- graph ----
-
-
-def graph():
-    """Draws the coral connectivity graph. The result is a dendrogram."""
-    nxgraph = ipc_connectivity.graph
-
-    # Layout
-    def scale_layout(flayout):
-        """Decorates a layout function so that the returned positions
-        will be normalized, i.e. they are centered at the origin and
-        scaled to [-1, 1]^2.
-        """
-        def wrapped(*args, **kargs):
-            pos = flayout(*args, **kargs)
-            pos = np.array(list(pos.values()))
-            pos -= np.mean(pos, axis=0)
-            pos /= np.std(pos, axis=0)
-            pos = {i: pos[i] for i in range(pos.shape[0])}
-            return pos
-        return wrapped
-        
-    layout = "dot"
-    if layout == "dot":
-        graph = bokeh.plotting.from_networkx(
-            nxgraph, scale_layout(nx.drawing.nx_pydot.graphviz_layout), 
-            prog="dot"
-        )
-    elif layout == "twopi":
-        graph = bokeh.plotting.from_networkx(
-            nxgraph, scale_layout(nx.drawing.nx_pydot.graphviz_layout), 
-            prog="twopi"
-        )
-    elif layout == "circo":
-        graph = bokeh.plotting.from_networkx(
-            nxgraph, scale_layout(nx.drawing.nx_pydot.graphviz_layout), 
-            prog="circo"
-        )
-    else:
-        graph = bokeh.plotting.from_networkx(
-            nxgraph, scale_layout(nx.drawing.spring_layout)
-        )
-
-    source_nodes = graph.node_renderer.data_source
-    source_edges = graph.edge_renderer.data_source
-
-    # Colormap
-    #
-    # * factor_cmap: the label must be of type "str"
-    # * factor_cmap: the color palette must be large enogough
-    labels = [str(e[0]) for e in source_nodes.data["label"]]
-    labels_unique = np.sort(np.unique(labels))
-
-    palette = itertools.cycle(bokeh.palettes.Spectral11)
-    palette = [next(palette) for i in labels_unique]
-
-    colormap = bokeh.transform.factor_cmap(
-        "label", palette=palette, factors=labels_unique,
-    )
-
-    # node renderer
-
-    source_nodes.data["label"] = labels
-    graph.node_renderer.glyph = bokeh.models.Ellipse(
-        width=0.2, height=0.2, fill_color=colormap
-    )
-    graph.inspection_policy = bokeh.models.NodesOnly()
-
-    # edge renderer
-
-    graph.edge_renderer.selection_glyph = bokeh.models.MultiLine(line_color="blue", line_width=5)
-    graph.edge_renderer.hover_glyph = bokeh.models.MultiLine(line_color="red", line_width=10)
-
-    # plot 
-    # x_range = bokeh.models.Range1d(-2.0, 2.0, bounds=())
-    # x_axis = bokeh.models.LinearAxis()
-
-    p = bokeh.plotting.figure(
-        tooltips=[
-            ("index", "@index"),
-            ("label", "@label"),
-            ("generation", "@shortest_distance")
-        ],
-        sizing_mode="scale_both",
-        match_aspect=True,
-        x_axis_location=None,
-        y_axis_location=None,
-
-    )
-    p.grid.grid_line_color = None
-    p.xaxis.bounds = ()
-    p.renderers.append(graph)
-    return p
-
-
-def graph_vertex_table():
-    """Shows the vertex attributes of the graph."""
-    df = nx.to_pandas_edgelist(ipc_connectivity.graph)
-    source = bokeh.models.ColumnDataSource(df)
-
-    columns = [
-        bokeh.models.TableColumn(field=name, title=name) for name in df.columns
-    ]
-    table = bokeh.models.DataTable(
-        source=source, width=400, columns=columns, sizing_mode="stretch_both"
-    )
-    return table
-
-
-def graph_edge_table():
-    """Shows the edge attributes of the graph."""
-    df = nx.to_pandas_edgelist(ipc_connectivity.graph)
-    source = bokeh.models.ColumnDataSource(df)
-
-    columns = [
-        bokeh.models.TableColumn(field=name, title=name) for name in df.columns
-    ]
-    table = bokeh.models.DataTable(
-        source=source, width=400, columns=columns, sizing_mode="stretch_both"
-    )
-    return table
-
-
+# Features
 features_splom = features.splom(features_df, features_bokeh, features_columns)
 features_table = features.table(features_df, features_bokeh, features_columns)
 
+# Dimensionality reduction
 cluster.create_reducer(mode="PCA")
 cluster.fit_reduction(features_df, features_columns)
 cluster_splom = cluster.splom(features_df, features_columns)
 cluster_table = cluster.table(features_df, features_columns)
 
+# Graph
+graph_edge_df = graph.to_pandas_edgelist(ipc_connectivity.graph)
+graph_vertex_df = graph.to_pandas_vertexlist(ipc_connectivity.graph)
+
+graph_edge_source = bokeh.models.ColumnDataSource(graph_edge_df)
+graph_vertex_source = bokeh.models.ColumnDataSource(graph_vertex_df)
+
+graph_plot = graph.plot(
+    ipc_connectivity.graph,
+    graph_vertex_df, graph_vertex_source, graph_edge_df, graph_edge_source
+)
+graph_vertex_table = graph.vertex_table(graph_vertex_source, [])
+graph_edge_table = graph.edge_table(graph_edge_source, [])
+
+# Document (Tabs)
 tabs = bokeh.models.Tabs(tabs=[
     bokeh.models.TabPanel(child=features_splom, title="Features SPLOM"),
     bokeh.models.TabPanel(child=features_table, title="Features Table"),
     bokeh.models.TabPanel(child=cluster_splom, title="UMAP SPLOM"),
     bokeh.models.TabPanel(child=cluster_table, title="UMAP Table"),
-    bokeh.models.TabPanel(child=graph(), title="Graph"),
-    bokeh.models.TabPanel(child=graph_vertex_table(), title="Graph Vertex Table"),
-    bokeh.models.TabPanel(child=graph_edge_table(), title="Graph Edge Table")
-], active=2, sizing_mode="stretch_both", syncable=True)
+    bokeh.models.TabPanel(child=graph_plot, title="Graph"),
+    bokeh.models.TabPanel(child=graph_vertex_table, title="Graph Vertex Table"),
+    bokeh.models.TabPanel(child=graph_edge_table, title="Graph Edge Table")
+], active=4, sizing_mode="stretch_both", syncable=True)
 
 document = bokeh.plotting.curdoc()
 document.add_root(tabs)
-
-# document.add_root(
-#     umap_splom()
-# )

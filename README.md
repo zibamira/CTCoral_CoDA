@@ -24,10 +24,6 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 
 ## ToDo
 
-*   UMap
-    *   Implement the dimensionality reduction
-    *   Implement the SPLOM plot
-    *   Implement the table view of the factors
 *   UI Widgets
     *   Add widgets for selecting the glyph label field
     *   Add widgets for selecting the color label field
@@ -38,13 +34,16 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
     *   Refactor the plots into dedicated modules
 *   Link and Brush
     *   Use a single data source whenever possible
+        *   Features (id -> features)
+        *   Graph (id -> vertex attributes)
+        *   Cluster (id -> component)
     *   Add a watchdog to the Python py_ipc package
     *   Add an ROI seeking function to the Amira hx_shmem package so that
         we can jump to the 3D location when a single instance is selected
-        in Bokeh
+        in Bokeh (New Bokeh Tool)
 *   Graph   
     *   Add a recompute button for the spring layout
-    *   Add a save button for the currently shown layout
+    *   Add a save button for the currently shown layout, i.e. the vertex positions.
     *   Add a button for selecting the current connected component if there 
         are multiple available
     *   Color the edges depending on their orienation, e.g.
@@ -53,8 +52,10 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 
 ## ToDo Next
 
-*   Create the SPLOM class
-*   Factor out the code for the *graph* codes.
+*   Combine all dataframes into a single Bokeh source
+*   Link everything together (syncable = True)
+*   Factor out the colormaps and share them
+*   Factor out the glyphmaps and share them
 
 ## Usage
 

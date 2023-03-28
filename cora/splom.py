@@ -21,8 +21,7 @@ import natsort
 
 
 __all__ = [
-    "splom_histogram",
-    "splom_scatter",
+    "Splom",
     "splom"
 ]
 
