@@ -174,6 +174,32 @@ class Graph(object):
         layout = self.recompute_layout(self.nx_graph)
         provider = bokeh.models.StaticLayoutProvider(graph_layout=layout)
         return provider
+
+    # def init_plot(self):
+    #     p = bokeh.plotting.figure(
+    #         tooltips=[
+    #             ("index", "@index"),
+    #             ("label", "@label"),
+    #             ("generation", "@shortest_distance")
+    #         ],
+    #         sizing_mode="scale_both",
+    #         match_aspect=True,
+    #         x_axis_location=None,
+    #         y_axis_location=None
+    #     )
+    #     positions = self.recompute_layout(self.nx_graph)
+    #     p.circle(x=positions[:, 0], y=positions[:, 1], size=24)
+    #     # Create a line for each edge.
+    #     lines_x = []
+    #     lines_y = []
+    #     for index, row in self.edge_df.iterrows():
+    #         start_pos = positions[row["start"]]
+    #         end_pos = positions[row["end"]] 
+    #         lines_x.append((start_pos[0], end_pos[0]))
+    #         lines_y.append((start_pos[1], end_pos[1]))
+    #     p.multi_line(xs=lines_x, ys=lines_y)
+    #     self.figure = p
+    #     return None
     
     def init_plot(self):
         """Creates the figure with the graph plot."""    
@@ -203,7 +229,6 @@ class Graph(object):
             node_renderer=node_renderer,
             edge_renderer=edge_renderer
         )
-
         self.graph_renderer.selection_policy = bokeh.models.NodesAndLinkedEdges()
         self.graph_renderer.inspection_policy = bokeh.models.NodesAndLinkedEdges()
 
@@ -220,12 +245,10 @@ class Graph(object):
             y_axis_location=None
         )
         p.grid.grid_line_color = None
-        # p.xaxis.bounds = ()
         p.renderers.append(self.graph_renderer)
 
         self.figure = p
         return None
-
 
 def plot(
     nx_graph: nx.DiGraph,
@@ -237,7 +260,7 @@ def plot(
     """Computes a graph layout and shows the graph in a plot."""
     graph = Graph()
     graph.colormap_column_name = "shortest_distance"
-    graph.layout_algorithm = "twopi"
+    graph.layout_algorithm = "dot"
     graph.nx_graph = nx_graph
     graph.vertex_df = vertex_df
     graph.vertex_source = vertex_source
