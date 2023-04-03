@@ -24,14 +24,19 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 
 ## ToDo
 
+
+*   Blockers:  
+    *   Can I replace the colormap at runtime without a page reload?
+    *   Can I replace the glyphmap at runtime without a page reload?
+    *   Can I replace the graph layout without replaceing the plot?
+    *   Can I add or remove plots to the SPLOM?
 *   UI Widgets
     *   Add widgets for selecting the glyph label field
     *   Add widgets for selecting the color label field
     *   Add widgets for selecting the features used in UMap
-    *   Add widgets for selecting the features show in the SPLOM plot
+    *   Add widgets for selecting the features shown in the SPLOM plot
     *   Add widgets for recomputing the spring layout
-*   Refactoring
-    *   Refactor the plots into dedicated modules
+    *   Adjustable size of the vertex glyphs in the graph plot.
 *   Link and Brush
     *   Use a single data source whenever possible
         *   Features (id -> features)
@@ -49,6 +54,14 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
     *   Color the edges depending on their orienation, e.g.
         black: top -> bottom, everything else red
     *   Add a selection tool and link it with other views
+    *   Add the (connected) component id to the vertex attributes
+    *   Add a flag as vertex attribute: "root" or "descendant"
+    *   Add an edge attribute: "orientation" giving a heuristic value if the edge is oriented correctly. Some value between 0 and 1.
+*   Flower Glyph    
+    *   Summarize the current selection 
+    *   Flower or Star Glyph, or something similar to the visualization in the Antrag
+*   Map visualization
+    *   Location of the dataset on a world map
 
 ## ToDo Next
 

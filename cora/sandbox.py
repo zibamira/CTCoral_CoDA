@@ -75,6 +75,9 @@ class Application(object):
         #: The plot figure.
         self.figure: bokeh.models.Model = None
 
+        #: The plot figure displaying the flower/star visualization.
+        self.figure_flower: bokeh.models.Model = None
+
         #: The layout for all UI control widgets and some help 
         #: information.
         self.layout_sidebar: bokeh.models.Column = None
@@ -92,6 +95,7 @@ class Application(object):
         self.update_glyphmap()
         self.update_cds()
         self.update_plot()
+        self.update_flower_plot()
 
         self.layout = bokeh.layouts.row([
             self.layout_sidebar, 
@@ -217,6 +221,7 @@ class Application(object):
         """Updates the ColumnDataSource with the content in the pandas DataFrame."""
         if not self.cds:
             self.cds = bokeh.models.ColumnDataSource(self.df)
+            self.cds.selected.on_change("indices", self.on_cds_selection_change)
         else:
             self.cds.data.update(self.df)
         return None
@@ -229,7 +234,8 @@ class Application(object):
         print(f"update plot '{colx}' x '{coly}'.")
 
         self.figure = bokeh.plotting.figure(
-            width=800, height=600, syncable=True
+            width=800, height=600, syncable=True,
+            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover"
         )
         s = self.figure.scatter(
             x=colx, y=coly, syncable=True, source=self.cds,
@@ -250,23 +256,28 @@ class Application(object):
         self.layout_central.children = [self.figure]
         return None
     
-    def on_ui_select_x_change(self, attr, new, old):
+    def update_flower_plot(self):
+        """Updates the flower plot based on the current selection."""
+
+        return None
+    
+    def on_ui_select_x_change(self, attr, old, new):
         """The user changed the x data column."""
         self.update_plot()
         return None
 
-    def on_ui_select_y_change(self, attr, new, old):
+    def on_ui_select_y_change(self, attr, old, new):
         """The user changed the y data column."""
         self.update_plot()
         return None
     
-    def on_ui_select_color_change(self, attr, new, old):
+    def on_ui_select_color_change(self, attr, old, new):
         """The user changed the colormap column."""
         self.update_colormap()
         self.cds.data["cora:color"] = self.df["cora:color"]
         return None
 
-    def on_ui_select_glyph_change(self, attr, new, old):
+    def on_ui_select_glyph_change(self, attr, old, new):
         """The user changed the glyphmap column."""
         print("glyph change.")
         self.update_glyphmap()
@@ -281,6 +292,13 @@ class Application(object):
         self.update_glyphmap()
         self.update_cds()
         # self.update_plot()
+        return None
+    
+    def on_cds_selection_change(self, attr, old, new):
+        """The selection changed."""
+        print("on_cds_selection_change()")
+        print(old)
+        print(new)
         return None
     
 
