@@ -35,6 +35,147 @@ import sklearn.preprocessing
 import umap
 
 
+class FlowerPlot(object):
+    """Creates a flower visualization of the current selection."""
+
+    def __init__(self):
+        """ """
+        #: The dataframe containing all samples.
+        self.df: pd.DataFrame = None
+
+        #: The dataframe with the current selection.
+        self.df_selection: pd.DataFrame = None
+
+        #: A description / summary of the whole dataset.
+        #: Cached for efficiency.
+        self.desc: pd.DataFrame = None
+
+        #: A description / summary of the seletion.
+        self.desc_selection: pd.DataFrame = None
+
+        #: The column data source the plot is based on.
+        #: If possible, only this source is updated when the selection
+        #: changes. This is more performant and less error prone than
+        #: recreating the plot every time the user interacts.
+        self.cds: bokeh.models.ColumnDataSource = None
+
+        #: The figure displaying the flower.
+        self.figure: bokeh.models.Model = None
+        return None
+
+    def update_df(self, df):
+        """Replaces the dataframe with the new one."""
+        if df is not self.df:
+            self.df = df
+            self.desc = df.describe()
+
+            self.update_selection(indices=[])
+        return None
+
+    def update_selection(self, indices):
+        """Updates the dataframe and description of the selected rows."""
+        if indices:
+            self.df_selection = self.df.loc[indices]
+            self.desc_selection = self.df_selection.describe()
+        else:
+            self.df_selection = self.df
+            self.desc_selection = self.desc
+
+        self.update_cds()
+        return None
+
+    def update_cds(self):
+        """Updates the column data source containing the render information."""
+        ncolumns = len(self.df.columns)
+
+        # Extract the attributes relevant for the pedal/wedge size
+        # and shape.
+        mean_selection = self.desc_selection.loc["mean"]
+        min_total = self.desc.loc["min"]
+        max_total = self.desc.loc["max"]
+
+        # Divide the circle into segments of the same size.
+        angles = np.linspace(0.0, 2.0*np.pi, ncolumns + 1)
+        radius = (mean_selection - min_total)/(max_total - min_total)
+        start_angle = angles[:-1]
+        end_angle = angles[1:]
+        color = bokeh.palettes.all_palettes["Spectral"][ncolumns]
+
+        # Update the column data source.
+        data = {
+            "start_angle": start_angle,
+            "end_angle": end_angle,
+            "radius": radius,
+            "fill_color": color,
+            "column": self.df.columns,
+            "mean": mean_selection
+        }
+
+        # Update the column data source.
+        if not self.cds:
+            self.cds = bokeh.models.ColumnDataSource(data)
+        else:
+            self.cds.data = data
+        return None
+
+    def init_figure(self):
+        """Creates the plot displaying the flower/wedge visualization."""
+        # Create the plot.
+        p = bokeh.plotting.figure(
+            width=400, 
+            height=400, 
+            syncable=True,
+            tools="tap,reset,hover,save",
+            tooltips=[
+                ("column", "@column"),
+                ("mean", "@mean")
+            ],
+            x_range=(-1, 1),
+            y_range=(-1, 1)
+        )
+        p.xaxis.visible = False
+        p.yaxis.visible = False
+        p.xgrid.visible = False
+        p.ygrid.visible = False
+
+        # TODO: Toolip when hovering with name of the aggregated feature.
+        # TODO: Draw a drop. The drop's inflection point corresponds to the mean
+        #       Or even better: Read about the current state of the art
+        #       and eventually design your own polyp based visualization.
+
+        # Draw a bounding circle as additional visual hint.
+        p.circle(
+            x=0.0,
+            y=0.0, 
+            radius=1.0, 
+            fill_alpha=0.0,
+            line_color="grey",
+            line_dash="dotted",
+            line_width=1.0
+        )
+
+        # Draw the wedge. Usually, only the cds is updated as long as 
+        # the columns of the data frame don't change.
+        p.wedge(
+            x=0.0, 
+            y=0.0,
+            radius="radius",
+            start_angle="start_angle",
+            end_angle="end_angle",
+            fill_color="fill_color",
+            line_color="grey",
+            line_width=1.0,
+            direction="anticlock",
+            source=self.cds
+        )
+
+        # Rose curve.
+
+        self.figure = p
+        return None
+
+
+
 class Application(object):
     """Demo application."""
 
@@ -76,7 +217,7 @@ class Application(object):
         self.figure: bokeh.models.Model = None
 
         #: The plot figure displaying the flower/star visualization.
-        self.figure_flower: bokeh.models.Model = None
+        self.figure_flower: FlowerPlot = None
 
         #: The layout for all UI control widgets and some help 
         #: information.
@@ -105,7 +246,7 @@ class Application(object):
     
     def update_df(self):
         """Creates random data samples."""
-        nsamples = 1000
+        nsamples = 100
         self.df = pd.DataFrame.from_dict({
             "input:col A": np.random.random(nsamples),
             "input:col B": np.random.standard_normal(nsamples),
@@ -179,7 +320,6 @@ class Application(object):
     
     def update_colormap(self):
         """Updates the color column in the column data source."""
-        print("update_colormap()")
         nrows = len(self.df)
         column = self.ui_select_color.value
 
@@ -194,12 +334,10 @@ class Application(object):
         colormap = {factor: color for factor, color in zip(factors, palette)}
 
         self.df["cora:color"] = [colormap[factor] for factor in self.df[column]]
-        print(self.df["cora:color"])
         return None
     
     def update_glyphmap(self):
         """Updates the glyph column in the column data source."""
-        print("update_glyphmap()")
         nrows = len(self.df)
         column = self.ui_select_glyph.value
 
@@ -214,7 +352,6 @@ class Application(object):
         glyphmap = {factor: marker for factor, marker in zip(factors, markers)}
 
         self.df["cora:glyph"] = [glyphmap[factor] for factor in self.df[column]]
-        print(self.df["cora:glyph"])
         return None
     
     def update_cds(self):
@@ -234,7 +371,7 @@ class Application(object):
         print(f"update plot '{colx}' x '{coly}'.")
 
         self.figure = bokeh.plotting.figure(
-            width=800, height=600, syncable=True,
+            width=400, height=400, syncable=True,
             tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover"
         )
         s = self.figure.scatter(
@@ -253,12 +390,43 @@ class Application(object):
             self.layout_central = bokeh.layouts.column([])
 
         # Replace the old plot.
-        self.layout_central.children = [self.figure]
+        self.update_layout_central()
         return None
     
     def update_flower_plot(self):
-        """Updates the flower plot based on the current selection."""
+        """Updates the flower plot based on the current selection."""  
 
+        if not self.figure_flower:
+            # Filter the input columns with scalar values
+            # and compute a description of the whole dataset.
+            scalar_columns = [
+                name \
+                for name in self.df.columns \
+                if not name.startswith("cora:") and pd.api.types.is_numeric_dtype(self.df[name].dtype)
+            ]
+            df = self.df[scalar_columns]
+
+            self.figure_flower = FlowerPlot()
+            self.figure_flower.update_df(df)
+            self.figure_flower.update_selection(indices=[])
+            self.figure_flower.update_cds()
+            self.figure_flower.init_figure()
+
+            self.update_layout_central()
+        else:
+            indices = self.cds.selected.indices
+            self.figure_flower.update_selection(indices)
+        return None
+    
+    def update_layout_central(self):
+        """Updates the plots in the central layout."""
+        children = []
+        if self.figure is not None:
+            children.append(self.figure)
+        if self.figure_flower is not None:
+            children.append(self.figure_flower.figure)
+
+        self.layout_central.children = children
         return None
     
     def on_ui_select_x_change(self, attr, old, new):
@@ -296,9 +464,7 @@ class Application(object):
     
     def on_cds_selection_change(self, attr, old, new):
         """The selection changed."""
-        print("on_cds_selection_change()")
-        print(old)
-        print(new)
+        self.update_flower_plot()
         return None
     
 
