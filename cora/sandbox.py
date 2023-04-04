@@ -38,6 +38,11 @@ import umap
 class FlowerPlot(object):
     """Creates a flower visualization of the current selection."""
 
+    # TODO: Use the same colormap as in the SPLOM plots.
+    # TODO: Use the same glyphs as in the SPLOM plots,
+    #       create the labels outgoing from the glyph,
+    #       i.e. draw them at the bounding circle outwards.
+
     def __init__(self):
         """ """
         #: The dataframe containing all samples.
@@ -120,18 +125,18 @@ class FlowerPlot(object):
 
     def init_figure(self):
         """Creates the plot displaying the flower/wedge visualization."""
-        # Create the plot.
+        # We center the glyph in the ``[-1, -1] x [-1, 1]`` square around
+        # the origin.
         p = bokeh.plotting.figure(
             width=400, 
             height=400, 
             syncable=True,
-            tools="tap,reset,hover,save",
+            tools="tap,reset,hover,save,pan,wheel_zoom",
             tooltips=[
                 ("column", "@column"),
                 ("mean", "@mean")
             ],
-            x_range=(-1, 1),
-            y_range=(-1, 1)
+            match_aspect=True
         )
         p.xaxis.visible = False
         p.yaxis.visible = False
@@ -144,10 +149,13 @@ class FlowerPlot(object):
         #       and eventually design your own polyp based visualization.
 
         # Draw a bounding circle as additional visual hint.
-        p.circle(
-            x=0.0,
-            y=0.0, 
-            radius=1.0, 
+        # For some reason ``circle()`` was not really circular when used
+        # with bounded ranges.
+        p.ellipse(
+            x=0.0, 
+            y=0.0,
+            width=2.0, 
+            height=2.0,
             fill_alpha=0.0,
             line_color="grey",
             line_dash="dotted",
@@ -156,24 +164,50 @@ class FlowerPlot(object):
 
         # Draw the wedge. Usually, only the cds is updated as long as 
         # the columns of the data frame don't change.
-        p.wedge(
-            x=0.0, 
-            y=0.0,
-            radius="radius",
-            start_angle="start_angle",
-            end_angle="end_angle",
-            fill_color="fill_color",
-            line_color="grey",
-            line_width=1.0,
-            direction="anticlock",
-            source=self.cds
-        )
+        # p.wedge(
+        #     x=0.0, 
+        #     y=0.0,
+        #     radius="radius",
+        #     start_angle="start_angle",
+        #     end_angle="end_angle",
+        #     fill_color="fill_color",
+        #     line_color="grey",
+        #     line_width=1.0,
+        #     direction="anticlock",
+        #     source=self.cds
+        # )
 
-        # Rose curve.
+        # Rose curve.   
+        #
+        # We first compute a single petal of the rose curve and then rotate
+        # it as often as needed.
+        ncolumns = len(self.desc.columns)
+        ncolumns = 10
+        
+        delta = np.pi/(2.0*ncolumns)
+        phi = np.linspace(-delta, delta, 400)
+        x = np.cos(ncolumns*phi)*np.cos(phi)
+        y = np.cos(ncolumns*phi)*np.sin(phi)
+        
+        colors = ["blue", "red", "green", "yellow", "purple", "black", "grey"]
+        for icol in range(ncolumns):
+            angle = 2.0*np.pi*icol/ncolumns
+            xi = np.cos(angle)*x - np.sin(angle)*y
+            yi = np.sin(angle)*x + np.cos(angle)*y
+
+            radius = 1.0
+            xi = xi*radius
+            yi = yi*radius
+
+            color = colors[icol%len(colors)]
+        
+            p.line(xi, yi, color=color, line_width=8)
+
+        # Draw the origin to hide the overlap region.
+        p.ellipse(x=0.0, y=0.0, width=0.12, height=0.12, color="white", line_color="white")
 
         self.figure = p
         return None
-
 
 
 class Application(object):
