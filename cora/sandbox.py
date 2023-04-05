@@ -35,19 +35,7 @@ import sklearn.preprocessing
 import umap
 
 from flower import FlowerPlot, FlowerWedge, FlowerCurve
-
-
-class GraphPlot(object):
-    """Draw the coral framework connectivity as a 2D graph."""
-
-    # Factor out FlowerPlot / Wedge Plot
-    # Update Graph Plot
-    #
-    # Create 
-
-    def __init__(self):
-        self.df_vertices: pd.DataFrame = None
-        return None
+from graph import GraphPlot
 
 
 class Application(object):
@@ -59,8 +47,16 @@ class Application(object):
         #: with the glyph and color column.
         self.df: pd.DataFrame = None
 
+        #: The raw pandas DataFrame input for the edges and 
+        #: edge attribute information, enriched with glyph and
+        #: styling data by Cora.
+        self.df_edges: pd.DataFrame = None
+
         #: The Bokeh ColumnDataSource wrapping the DataFrame.
         self.cds: bokeh.models.ColumnDataSource = None
+
+        #: The Bokeh ColumnDataSource wrapping the edges DataFrame.
+        self.cds_edges: bokeh.models.ColumnDataSource = None
 
         #: Menu for selecting the x-axis data.
         self.ui_select_x = bokeh.models.Select(title="x-axis")
@@ -84,6 +80,17 @@ class Application(object):
             title="opacity", start=0.0, end=1.0, value=1.0, step=0.05
         )
 
+        #: Menu for selecting the graph layout algorithm.
+        self.ui_select_graph_layout = bokeh.models.Select(
+            title="Graph Layout",
+            options=["dot", "circo", "twopi", "spring"]
+        )
+
+        #: Button for recomputing the graph layout.
+        self.ui_button_recompute_graph_layout = bokeh.models.Button(
+            label="Refresh layout"
+        )
+
         #: Button for reloading (generating) the data.
         self.ui_button_reload = bokeh.models.Button(label="Reload")
 
@@ -92,6 +99,9 @@ class Application(object):
 
         #: The plot figure displaying the flower/star visualization.
         self.figure_flower: FlowerPlot = None
+
+        #: The plot figure displaying the graph.
+        self.figure_graph: GraphPlot = None
 
         #: The layout for all UI control widgets and some help 
         #: information.
@@ -109,8 +119,10 @@ class Application(object):
         self.update_colormap()
         self.update_glyphmap()
         self.update_cds()
+        self.update_cds_edges()
         self.update_plot()
         self.update_flower_plot()
+        self.update_graph_plot()
 
         self.layout = bokeh.layouts.row([
             self.layout_sidebar, 
@@ -133,6 +145,13 @@ class Application(object):
             "cora:color": random.choices(["red", "blue", "green"], k=nsamples),
             "cora:glyph": random.choices(["asterisk", "circle", "cross", "diamond"], k=nsamples)
         })
+
+        # Generate a random graph for testing.
+        self.df_edges = nx.to_pandas_edgelist(
+            G=nx.random_regular_graph(d=2, n=nsamples),
+            source="source", target="target"
+        )
+        self.df_edges["cora:color"] = random.choices(["red", "black"], k=len(self.df_edges))
         return None
     
     def update_ui(self):
@@ -167,15 +186,19 @@ class Application(object):
         self.ui_select_color.options = [""] + label_columns
         self.ui_select_glyph.options = [""] + label_columns
 
+        # plot data
         if self.ui_select_x.value not in scalar_columns:
             self.ui_select_x.value = scalar_columns[0]
         if self.ui_select_y.value not in scalar_columns:
             self.ui_select_y.value = scalar_columns[1]
+
+        # visual attributes
         if self.ui_select_color.value not in label_columns:
             self.ui_select_color.value = label_columns[0]
         if self.ui_select_glyph.value not in label_columns:
             self.ui_select_glyph.value = label_columns[1]
         
+        # create the sidebar and connect the callbacks
         if self.layout_sidebar is None:
             self.layout_sidebar = bokeh.layouts.column([
                 self.ui_select_x,
@@ -184,6 +207,8 @@ class Application(object):
                 self.ui_select_glyph,
                 self.ui_slider_size,
                 self.ui_slider_opacity,
+                self.ui_select_graph_layout,
+                self.ui_button_recompute_graph_layout,
                 self.ui_button_reload
             ])
 
@@ -192,6 +217,8 @@ class Application(object):
             self.ui_select_y.on_change("value", self.on_ui_select_y_change)
             self.ui_select_color.on_change("value", self.on_ui_select_color_change)
             self.ui_select_glyph.on_change("value", self.on_ui_select_glyph_change)
+            self.ui_select_graph_layout.on_change("value", self.on_ui_select_graph_layout_change)
+            self.ui_button_recompute_graph_layout.on_click(self.on_ui_graph_recompute_graph_layout_click)
             self.ui_button_reload.on_click(self.on_ui_button_reload_click)
         return None
     
@@ -237,15 +264,22 @@ class Application(object):
             self.cds = bokeh.models.ColumnDataSource(self.df)
             self.cds.selected.on_change("indices", self.on_cds_selection_change)
         else:
-            self.cds.data.update(self.df)
+            self.cds.data = self.df
+        return None
+
+    def update_cds_edges(self):
+        """Updates the ColumnDataSource for the edge information."""
+        if not self.cds_edges:
+            self.cds_edges = bokeh.models.ColumnDataSource(self.df_edges)
+            self.cds_edges.selected.on_change("indices", self.on_cds_edges_selection_change)
+        else:
+            self.cds_edges.data = self.df_edges
         return None
 
     def update_plot(self):
         """Updates the plot based on the current user settings."""   
         colx = self.ui_select_x.value
         coly = self.ui_select_y.value
-
-        print(f"update plot '{colx}' x '{coly}'.")
 
         self.figure = bokeh.plotting.figure(
             width=600, height=600, syncable=True,
@@ -295,14 +329,50 @@ class Application(object):
             self.figure_flower.set_selection(indices)
             self.figure_flower.update_cds()
         return None
+
+    def update_graph_plot(self):
+        """Updates the graph plot."""
+        if not self.figure_graph:
+            self.figure_graph = GraphPlot()
+
+            p = self.figure_graph
+            p.df_vertices = self.df
+            p.df_edges = self.df_edges
+            p.cds_vertices = self.cds
+            p.cds_edges = self.cds_edges
+            p.layout_algorithm = self.ui_select_graph_layout.value
+            
+            p.update_nx_graph()
+            p.compute_layout()
+            p.create_figure()
+
+            # TODO: Make the application available to all views and let them
+            #       access the global controls.
+            self.ui_slider_size.js_link("value", p.renderer_vertices.glyph, "size")
+            self.ui_slider_opacity.js_link("value", p.renderer_vertices.glyph, "fill_alpha")
+            self.ui_slider_opacity.js_link("value", p.renderer_vertices.glyph, "line_alpha")
+            
+            p.renderer_vertices.glyph.size = self.ui_slider_size.value
+            p.renderer_vertices.glyph.fill_alpha = self.ui_slider_opacity.value
+            p.renderer_vertices.glyph.line_alpha = self.ui_slider_opacity.value
+
+            self.ui_slider_opacity.js_link("value", p.renderer_edges.glyph, "line_alpha")
+
+            p.renderer_edges.glyph.line_alpha = self.ui_slider_opacity.value
+
+            self.update_layout_central()
+        return None
     
     def update_layout_central(self):
         """Updates the plots in the central layout."""
         children = []
         if self.figure is not None:
             children.append(self.figure)
-        if self.figure_flower is not None:
-            children.append(self.figure_flower.figure)
+        # if self.figure_flower is not None:
+        #     children.append(self.figure_flower.figure)
+        if self.figure_graph is not None:
+            print("graph in layout")
+            children.append(self.figure_graph.figure)
 
         self.layout_central.children = children
         return None
@@ -337,12 +407,30 @@ class Application(object):
         self.update_colormap()
         self.update_glyphmap()
         self.update_cds()
+        self.update_cds_edges()
         # self.update_plot()
         return None
     
     def on_cds_selection_change(self, attr, old, new):
         """The selection changed."""
+        print("vertex selection changed.")
         self.update_flower_plot()
+        return None
+    
+    def on_cds_edges_selection_change(self, attr, old, new):
+        """The selection changed."""
+        print("edges selection changed.")
+        return None
+
+    def on_ui_select_graph_layout_change(self, attr, old, new):
+        """The graph layout algorithm changed."""    
+        self.figure_graph.layout_algorithm = new
+        self.figure_graph.compute_layout()
+        return None
+    
+    def on_ui_graph_recompute_graph_layout_click(self):
+        """The user wants to refresh the layout."""
+        self.figure_graph.compute_layout()
         return None
     
 
