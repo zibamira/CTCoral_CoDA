@@ -34,179 +34,19 @@ import sklearn
 import sklearn.preprocessing
 import umap
 
+from flower import FlowerPlot, FlowerWedge, FlowerCurve
 
-class FlowerPlot(object):
-    """Creates a flower visualization of the current selection."""
 
-    # TODO: Use the same colormap as in the SPLOM plots.
-    # TODO: Use the same glyphs as in the SPLOM plots,
-    #       create the labels outgoing from the glyph,
-    #       i.e. draw them at the bounding circle outwards.
+class GraphPlot(object):
+    """Draw the coral framework connectivity as a 2D graph."""
+
+    # Factor out FlowerPlot / Wedge Plot
+    # Update Graph Plot
+    #
+    # Create 
 
     def __init__(self):
-        """ """
-        #: The dataframe containing all samples.
-        self.df: pd.DataFrame = None
-
-        #: The dataframe with the current selection.
-        self.df_selection: pd.DataFrame = None
-
-        #: A description / summary of the whole dataset.
-        #: Cached for efficiency.
-        self.desc: pd.DataFrame = None
-
-        #: A description / summary of the seletion.
-        self.desc_selection: pd.DataFrame = None
-
-        #: The column data source the plot is based on.
-        #: If possible, only this source is updated when the selection
-        #: changes. This is more performant and less error prone than
-        #: recreating the plot every time the user interacts.
-        self.cds: bokeh.models.ColumnDataSource = None
-
-        #: The figure displaying the flower.
-        self.figure: bokeh.models.Model = None
-        return None
-
-    def update_df(self, df):
-        """Replaces the dataframe with the new one."""
-        if df is not self.df:
-            self.df = df
-            self.desc = df.describe()
-
-            self.update_selection(indices=[])
-        return None
-
-    def update_selection(self, indices):
-        """Updates the dataframe and description of the selected rows."""
-        if indices:
-            self.df_selection = self.df.loc[indices]
-            self.desc_selection = self.df_selection.describe()
-        else:
-            self.df_selection = self.df
-            self.desc_selection = self.desc
-
-        self.update_cds()
-        return None
-
-    def update_cds(self):
-        """Updates the column data source containing the render information."""
-        ncolumns = len(self.df.columns)
-
-        # Extract the attributes relevant for the pedal/wedge size
-        # and shape.
-        mean_selection = self.desc_selection.loc["mean"]
-        min_total = self.desc.loc["min"]
-        max_total = self.desc.loc["max"]
-
-        # Divide the circle into segments of the same size.
-        angles = np.linspace(0.0, 2.0*np.pi, ncolumns + 1)
-        radius = (mean_selection - min_total)/(max_total - min_total)
-        start_angle = angles[:-1]
-        end_angle = angles[1:]
-        color = bokeh.palettes.all_palettes["Spectral"][ncolumns]
-
-        # Update the column data source.
-        data = {
-            "start_angle": start_angle,
-            "end_angle": end_angle,
-            "radius": radius,
-            "fill_color": color,
-            "column": self.df.columns,
-            "mean": mean_selection
-        }
-
-        # Update the column data source.
-        if not self.cds:
-            self.cds = bokeh.models.ColumnDataSource(data)
-        else:
-            self.cds.data = data
-        return None
-
-    def init_figure(self):
-        """Creates the plot displaying the flower/wedge visualization."""
-        # We center the glyph in the ``[-1, -1] x [-1, 1]`` square around
-        # the origin.
-        p = bokeh.plotting.figure(
-            width=400, 
-            height=400, 
-            syncable=True,
-            tools="tap,reset,hover,save,pan,wheel_zoom",
-            tooltips=[
-                ("column", "@column"),
-                ("mean", "@mean")
-            ],
-            match_aspect=True
-        )
-        p.xaxis.visible = False
-        p.yaxis.visible = False
-        p.xgrid.visible = False
-        p.ygrid.visible = False
-
-        # TODO: Toolip when hovering with name of the aggregated feature.
-        # TODO: Draw a drop. The drop's inflection point corresponds to the mean
-        #       Or even better: Read about the current state of the art
-        #       and eventually design your own polyp based visualization.
-
-        # Draw a bounding circle as additional visual hint.
-        # For some reason ``circle()`` was not really circular when used
-        # with bounded ranges.
-        p.ellipse(
-            x=0.0, 
-            y=0.0,
-            width=2.0, 
-            height=2.0,
-            fill_alpha=0.0,
-            line_color="grey",
-            line_dash="dotted",
-            line_width=1.0
-        )
-
-        # Draw the wedge. Usually, only the cds is updated as long as 
-        # the columns of the data frame don't change.
-        # p.wedge(
-        #     x=0.0, 
-        #     y=0.0,
-        #     radius="radius",
-        #     start_angle="start_angle",
-        #     end_angle="end_angle",
-        #     fill_color="fill_color",
-        #     line_color="grey",
-        #     line_width=1.0,
-        #     direction="anticlock",
-        #     source=self.cds
-        # )
-
-        # Rose curve.   
-        #
-        # We first compute a single petal of the rose curve and then rotate
-        # it as often as needed.
-        ncolumns = len(self.desc.columns)
-        ncolumns = 10
-        
-        delta = np.pi/(2.0*ncolumns)
-        phi = np.linspace(-delta, delta, 400)
-        x = np.cos(ncolumns*phi)*np.cos(phi)
-        y = np.cos(ncolumns*phi)*np.sin(phi)
-        
-        colors = ["blue", "red", "green", "yellow", "purple", "black", "grey"]
-        for icol in range(ncolumns):
-            angle = 2.0*np.pi*icol/ncolumns
-            xi = np.cos(angle)*x - np.sin(angle)*y
-            yi = np.sin(angle)*x + np.cos(angle)*y
-
-            radius = 1.0
-            xi = xi*radius
-            yi = yi*radius
-
-            color = colors[icol%len(colors)]
-        
-            p.line(xi, yi, color=color, line_width=8)
-
-        # Draw the origin to hide the overlap region.
-        p.ellipse(x=0.0, y=0.0, width=0.12, height=0.12, color="white", line_color="white")
-
-        self.figure = p
+        self.df_vertices: pd.DataFrame = None
         return None
 
 
@@ -285,6 +125,9 @@ class Application(object):
             "input:col A": np.random.random(nsamples),
             "input:col B": np.random.standard_normal(nsamples),
             "input:col C": np.random.random(nsamples),
+            "input:col D": np.random.random(nsamples),
+            "input:col E": np.random.random(nsamples),
+            "input:col F": np.random.random(nsamples),
             "input:label A": random.choices(["A1", "A2"], k=nsamples),
             "input:label B": random.choices(["B1", "B2"], k=nsamples),
             "cora:color": random.choices(["red", "blue", "green"], k=nsamples),
@@ -405,7 +248,7 @@ class Application(object):
         print(f"update plot '{colx}' x '{coly}'.")
 
         self.figure = bokeh.plotting.figure(
-            width=400, height=400, syncable=True,
+            width=600, height=600, syncable=True,
             tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover"
         )
         s = self.figure.scatter(
@@ -421,7 +264,7 @@ class Application(object):
 
         # Create the layout if not yet done.
         if self.layout_central is None:
-            self.layout_central = bokeh.layouts.column([])
+            self.layout_central = bokeh.layouts.row([])
 
         # Replace the old plot.
         self.update_layout_central()
@@ -440,16 +283,17 @@ class Application(object):
             ]
             df = self.df[scalar_columns]
 
-            self.figure_flower = FlowerPlot()
-            self.figure_flower.update_df(df)
-            self.figure_flower.update_selection(indices=[])
+            self.figure_flower = FlowerCurve()
+            self.figure_flower.set_df(df)
+            self.figure_flower.set_selection(indices=[])
             self.figure_flower.update_cds()
-            self.figure_flower.init_figure()
+            self.figure_flower.create_figure()
 
             self.update_layout_central()
         else:
             indices = self.cds.selected.indices
-            self.figure_flower.update_selection(indices)
+            self.figure_flower.set_selection(indices)
+            self.figure_flower.update_cds()
         return None
     
     def update_layout_central(self):
@@ -505,3 +349,4 @@ class Application(object):
 app = Application()
 doc = bokeh.plotting.curdoc()
 doc.add_root(app.layout)
+doc.set_title("Cora - The Coral Explorer")
