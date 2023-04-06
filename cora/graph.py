@@ -26,43 +26,27 @@ __all__ = [
 ]
 
 
-def to_pandas_edgelist(nx_graph: nx.Graph):
-    """Converts the graph into a pandas DataFrame containing
-    the edges and edge attributes.
-    """
-    df = nx.to_pandas_edgelist(nx_graph)
-    df.rename(columns={"source": "start", "target": "end"}, inplace=True)
-    return df
-
-
-def to_pandas_vertexlist(nx_graph: nx.Graph):
-    """Converts the graph int a pandas DataFrame containg
-    the vertices and vertex attributes.
-    """
-    # Get all available attributes.
-    attribute_names = set()
-    for node, attributes in nx_graph.nodes.items():
-        attribute_names.update(attributes.keys())
-
-    # Create the data columns.
-    data = {
-        name: [] for name in attribute_names
-    }
-
-    for node, attributes in nx_graph.nodes.items():
-        for name in attribute_names:
-            value = attributes.get(name)
-            if value is not None and isinstance(value, np.ndarray) and value.size == 1:
-                value = value.item()
-            data[name].append(value)
-            
-    # Create the DataFrame.
-    df = pd.DataFrame(data)
-    return df
-
-
 class GraphPlot(object):
     """Plots the graph and links the vertices with other plots."""
+
+    # TODO: Only the "tap" tool works for selecting edges. All other
+    #       tools did not cause an event if a line was in the selection
+    #       or crossed.
+
+    LAYOUT_ALGORITHMS = [
+        "dot", 
+        "twopi", 
+        "circo",
+        "circular",
+        "kamada_kawai",
+        "planar",
+        "random",
+        "shell",
+        "spectral",
+        "spiral",
+        "multipartite"
+        "spring"
+    ]
 
     def __init__(self):
         """ """
@@ -107,6 +91,7 @@ class GraphPlot(object):
         """Replaces the networkx graph :attr:`nx_graph` with the current
         graph stored in the pandas DataFrames.
         """
+        # We only need the networkx graph to compute the layout.
         self.nx_graph = nx.from_pandas_edgelist(
             self.df_edges, source="source", target="target",
             edge_attr=None, create_using=nx.DiGraph
@@ -128,11 +113,26 @@ class GraphPlot(object):
             positions = nx.drawing.nx_pydot.graphviz_layout(self.nx_graph, prog="twopi")
         elif self.layout_algorithm == "circo":
             positions = nx.drawing.nx_pydot.graphviz_layout(self.nx_graph, prog="circo")
+        elif self.layout_algorithm == "circular":
+            positions = nx.drawing.circular_layout(self.nx_graph)
+        elif self.layout_algorithm == "kamada_kawai":
+            positions = nx.drawing.kamada_kawai_layout(self.nx_graph)
+        elif self.layout_algorithm == "planar":
+            positions = nx.drawing.planar_layout(self.nx_graph)
+        elif self.layout_algorithm == "random":
+            positions = nx.drawing.random_layout(self.nx_graph)
+        elif self.layout_algorithm == "shell":
+            positions = nx.drawing.shell_layout(self.nx_graph)
+        elif self.layout_algorithm == "spectral":
+            positions = nx.drawing.spectral_layout(self.nx_graph)
+        elif self.layout_algorithm == "spiral":
+            positions = nx.drawing.spiral_layout(self.nx_graph)
+        elif self.layout_algorithm == "multipartite":
+            positions = nx.drawing.multipartite_layout(self.nx_graph)
         else:
             positions = nx.drawing.spring_layout(self.nx_graph)
 
-        # Normalize the positions to be centered around the origin
-        # with standard deviation of the distance being 1.0.
+        # Normalize the scale.
         positions = np.array(list(positions.values()))
         positions -= np.mean(positions, axis=0)
         positions /= np.std(positions, axis=0)
@@ -180,7 +180,13 @@ class GraphPlot(object):
             width=600,
             height=600,
             syncable=True,
-            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover"
+            tools="pan,lasso_select,box_zoom,wheel_zoom,reset,hover,tap,save,box_select",
+            tooltips=[
+                ("index", "$index"),
+                ("source", "@source"),
+                ("target", "@target"),
+                ("input:col A", "@{input:col A}")
+            ]
         )
         p.xaxis.visible = False
         p.yaxis.visible = False
@@ -192,6 +198,8 @@ class GraphPlot(object):
             xs="cora:xs",
             ys="cora:ys",
             line_color="cora:color",
+            syncable=True,
+            line_cap="round",
             source=self.cds_edges
         )
 

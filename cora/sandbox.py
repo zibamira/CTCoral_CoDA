@@ -80,10 +80,21 @@ class Application(object):
             title="opacity", start=0.0, end=1.0, value=1.0, step=0.05
         )
 
+        #: Slider for adjusting the size of the edges.
+        self.ui_slider_edge_size = bokeh.models.Slider(
+            title="edge size", start=1.4, end=8, value=1, step=0.05
+        )
+
+        #: Slider for adjusting the opacity of the edges.
+        #: This may help to reduce visual clutter in dense graph layouts.
+        self.ui_slider_edge_opacity = bokeh.models.Slider(
+            title="edge opacity", start=0.0, end=1.0, value=1.0, step=0.05
+        )
+
         #: Menu for selecting the graph layout algorithm.
         self.ui_select_graph_layout = bokeh.models.Select(
             title="Graph Layout",
-            options=["dot", "circo", "twopi", "spring"]
+            options=GraphPlot.LAYOUT_ALGORITHMS
         )
 
         #: Button for recomputing the graph layout.
@@ -132,7 +143,7 @@ class Application(object):
     
     def update_df(self):
         """Creates random data samples."""
-        nsamples = 100
+        nsamples = 10
         self.df = pd.DataFrame.from_dict({
             "input:col A": np.random.random(nsamples),
             "input:col B": np.random.standard_normal(nsamples),
@@ -207,6 +218,8 @@ class Application(object):
                 self.ui_select_glyph,
                 self.ui_slider_size,
                 self.ui_slider_opacity,
+                self.ui_slider_edge_size,
+                self.ui_slider_edge_opacity,
                 self.ui_select_graph_layout,
                 self.ui_button_recompute_graph_layout,
                 self.ui_button_reload
@@ -272,6 +285,7 @@ class Application(object):
         if not self.cds_edges:
             self.cds_edges = bokeh.models.ColumnDataSource(self.df_edges)
             self.cds_edges.selected.on_change("indices", self.on_cds_edges_selection_change)
+            self.cds_edges.selected.on_change("multiline_indices", self.on_cds_edges_selection_change)
         else:
             self.cds_edges.data = self.df_edges
         return None
@@ -283,7 +297,7 @@ class Application(object):
 
         self.figure = bokeh.plotting.figure(
             width=600, height=600, syncable=True,
-            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover"
+            tools="pan,lasso_select,box_select,box_zoom,wheel_zoom,reset,hover,tap,save"
         )
         s = self.figure.scatter(
             x=colx, y=coly, syncable=True, source=self.cds,
@@ -356,9 +370,11 @@ class Application(object):
             p.renderer_vertices.glyph.fill_alpha = self.ui_slider_opacity.value
             p.renderer_vertices.glyph.line_alpha = self.ui_slider_opacity.value
 
-            self.ui_slider_opacity.js_link("value", p.renderer_edges.glyph, "line_alpha")
+            self.ui_slider_edge_opacity.js_link("value", p.renderer_edges.glyph, "line_alpha")
+            self.ui_slider_edge_size.js_link("value", p.renderer_edges.glyph, "line_width")
 
-            p.renderer_edges.glyph.line_alpha = self.ui_slider_opacity.value
+            p.renderer_edges.glyph.line_alpha = self.ui_slider_edge_opacity.value
+            p.renderer_edges.glyph.line_width = self.ui_slider_edge_size.value
 
             self.update_layout_central()
         return None
@@ -420,6 +436,7 @@ class Application(object):
     def on_cds_edges_selection_change(self, attr, old, new):
         """The selection changed."""
         print("edges selection changed.")
+        print(attr, new, old)
         return None
 
     def on_ui_select_graph_layout_change(self, attr, old, new):
