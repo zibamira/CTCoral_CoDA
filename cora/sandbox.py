@@ -143,7 +143,7 @@ class Application(object):
     
     def update_df(self):
         """Creates random data samples."""
-        nsamples = 10
+        nsamples = 100
         self.df = pd.DataFrame.from_dict({
             "input:col A": np.random.random(nsamples),
             "input:col B": np.random.standard_normal(nsamples),
@@ -158,8 +158,10 @@ class Application(object):
         })
 
         # Generate a random graph for testing.
+        G = nx.random_regular_graph(d=2, n=nsamples)
+        G = nx.minimum_spanning_tree(G)
         self.df_edges = nx.to_pandas_edgelist(
-            G=nx.random_regular_graph(d=2, n=nsamples),
+            G=G,
             source="source", target="target"
         )
         self.df_edges["cora:color"] = random.choices(["red", "black"], k=len(self.df_edges))
@@ -362,19 +364,27 @@ class Application(object):
 
             # TODO: Make the application available to all views and let them
             #       access the global controls.
-            self.ui_slider_size.js_link("value", p.renderer_vertices.glyph, "size")
-            self.ui_slider_opacity.js_link("value", p.renderer_vertices.glyph, "fill_alpha")
-            self.ui_slider_opacity.js_link("value", p.renderer_vertices.glyph, "line_alpha")
-            
             p.renderer_vertices.glyph.size = self.ui_slider_size.value
             p.renderer_vertices.glyph.fill_alpha = self.ui_slider_opacity.value
             p.renderer_vertices.glyph.line_alpha = self.ui_slider_opacity.value
+            self.ui_slider_size.js_link("value", p.renderer_vertices.glyph, "size")
+            self.ui_slider_opacity.js_link("value", p.renderer_vertices.glyph, "fill_alpha")
+            self.ui_slider_opacity.js_link("value", p.renderer_vertices.glyph, "line_alpha")
 
-            self.ui_slider_edge_opacity.js_link("value", p.renderer_edges.glyph, "line_alpha")
-            self.ui_slider_edge_size.js_link("value", p.renderer_edges.glyph, "line_width")
+            # # edges (layout arrow)
+            # p.renderer_edges.line_alpha = self.ui_slider_edge_opacity.value
+            # p.renderer_edges.line_width = self.ui_slider_edge_size.value
+            # self.ui_slider_edge_opacity.js_link("value", p.renderer_edges, "line_alpha")
+            # self.ui_slider_edge_size.js_link("value", p.renderer_edges, "line_width")
 
+            # p.renderer_edges.end.fill_alpha = self.ui_slider_edge_opacity.value
+            # self.ui_slider_edge_opacity.js_link("value", p.renderer_edges.end, "fill_alpha")
+
+            # edges (multi line)
             p.renderer_edges.glyph.line_alpha = self.ui_slider_edge_opacity.value
             p.renderer_edges.glyph.line_width = self.ui_slider_edge_size.value
+            self.ui_slider_edge_opacity.js_link("value", p.renderer_edges.glyph, "line_alpha")
+            self.ui_slider_edge_size.js_link("value", p.renderer_edges.glyph, "line_width")
 
             self.update_layout_central()
         return None

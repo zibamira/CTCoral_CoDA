@@ -44,7 +44,7 @@ class GraphPlot(object):
         "shell",
         "spectral",
         "spiral",
-        "multipartite"
+        "multipartite",
         "spring"
     ]
 
@@ -153,6 +153,31 @@ class GraphPlot(object):
 
         self.cds_edges.data["cora:xs"] = xs
         self.cds_edges.data["cora:ys"] = ys
+
+        # Update the edge arrows.
+        # XXX: I could not find a way to let Bokeh draw an arrow or line
+        # 
+        x0 = positions[self.df_edges["source"], 0]
+        y0 = positions[self.df_edges["source"], 1]
+
+        x1 = positions[self.df_edges["target"], 0]        
+        y1 = positions[self.df_edges["target"], 1]
+
+        dx = x1 - x0
+        dy = y1 - y0
+
+        angle = np.arctan2(dy, dx) + np.pi/6.0 
+
+        self.cds_edges.data["cora:arrow_x"] = x1
+        self.cds_edges.data["cora:arrow_y"] = y1
+
+        self.cds_edges.data["cora:arrow_x0"] = x0
+        self.cds_edges.data["cora:arrow_y0"] = y0
+
+        self.cds_edges.data["cora:arrow_x1"] = x1
+        self.cds_edges.data["cora:arrow_y1"] = y1
+
+        self.cds_edges.data["cora:arrow_angle"] = angle
         return positions
     
     def layout_provider(self):
@@ -193,6 +218,27 @@ class GraphPlot(object):
         p.xgrid.visible = False
         p.ygrid.visible = False
 
+        # edge arrows
+        # This was taken from a Bokeh example "arrow.html" regarding annoations.
+        # Unfortunetly, the arrows and addLayout() method glyphs cannot be selected.
+        # At least, I didn't make it work. So there's a tradeoff between arrows and
+        # multi-line edges.
+        # head = bokeh.models.NormalHead(
+        #     size=12, 
+        #     fill_color="cora:color", 
+        #     line_color="transparent"
+        # )
+        # self.renderer_edges = arrow = bokeh.models.Arrow(
+        #     end=head,
+        #     x_start="cora:arrow_x0",
+        #     y_start="cora:arrow_y0",
+        #     x_end="cora:arrow_x1",
+        #     y_end="cora:arrow_y1",
+        #     line_color="cora:color",
+        #     source=self.cds_edges
+        # )
+        # p.add_layout(arrow)
+
         # edges
         self.renderer_edges = p.multi_line(
             xs="cora:xs",
@@ -202,7 +248,7 @@ class GraphPlot(object):
             line_cap="round",
             source=self.cds_edges
         )
-
+        
         # vertices        
         self.renderer_vertices = p.scatter(
             x="cora:vertex_position_x",
