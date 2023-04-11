@@ -71,7 +71,7 @@ class GraphPlot(object):
 
         #: The Bokeh ColumnDataSource wrapping the :attr:`df_edges`
         #: DataFrame.
-        self.cds_edges = bokeh.models.ColumnDataSource = None
+        self.cds_edges: bokeh.models.ColumnDataSource = None
 
         #: The networkx graph used to compute the layout. It is computed
         #: from the :attr:`df_vertices` and :attr:`df_edges` data frames.

@@ -36,6 +36,7 @@ import umap
 
 from flower import FlowerPlot, FlowerWedge, FlowerCurve
 from graph import GraphPlot
+from histogram import HistogramPlot
 
 
 class Application(object):
@@ -114,6 +115,9 @@ class Application(object):
         #: The plot figure displaying the graph.
         self.figure_graph: GraphPlot = None
 
+        #: The plot figure displaying the histogram.
+        self.figure_histogram: HistogramPlot = None
+
         #: The layout for all UI control widgets and some help 
         #: information.
         self.layout_sidebar: bokeh.models.Column = None
@@ -134,6 +138,7 @@ class Application(object):
         self.update_plot()
         self.update_flower_plot()
         self.update_graph_plot()
+        self.update_histogram_plot()
 
         self.layout = bokeh.layouts.row([
             self.layout_sidebar, 
@@ -334,6 +339,7 @@ class Application(object):
             df = self.df[scalar_columns]
 
             self.figure_flower = FlowerCurve()
+            self.figure_flower.curve = "rose"
             self.figure_flower.set_df(df)
             self.figure_flower.set_selection(indices=[])
             self.figure_flower.update_cds()
@@ -388,6 +394,28 @@ class Application(object):
 
             self.update_layout_central()
         return None
+
+    def update_histogram_plot(self):
+        """Updates the histogram plot."""
+        if not self.figure_histogram:
+            self.figure_histogram = HistogramPlot()
+
+            p = self.figure_histogram
+            p.df = self.df
+            p.histogram_column_name = self.ui_select_x.value
+            p.label_column_name = self.ui_select_color.value
+            p.update()
+
+        #     # TODO: Add event callbacks.            
+
+            self.update_layout_central()
+        else:
+            p = self.figure_histogram
+            p.histogram_column_name = self.ui_select_x.value
+            p.label_column_name = self.ui_select_color.value
+            p.selection = self.cds.selected.indices
+            p.update()
+        return None
     
     def update_layout_central(self):
         """Updates the plots in the central layout."""
@@ -396,9 +424,11 @@ class Application(object):
             children.append(self.figure)
         # if self.figure_flower is not None:
         #     children.append(self.figure_flower.figure)
-        if self.figure_graph is not None:
-            print("graph in layout")
-            children.append(self.figure_graph.figure)
+        # if self.figure_graph is not None:
+        #     print("graph in layout")
+        #     children.append(self.figure_graph.figure)
+        if self.figure_histogram is not None:
+            children.append(self.figure_histogram.figure)
 
         self.layout_central.children = children
         return None
@@ -441,6 +471,7 @@ class Application(object):
         """The selection changed."""
         print("vertex selection changed.")
         self.update_flower_plot()
+        self.update_histogram_plot()
         return None
     
     def on_cds_edges_selection_change(self, attr, old, new):

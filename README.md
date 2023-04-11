@@ -24,19 +24,14 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 
 ## ToDo
 
+*   Interactive histogram plots\
+    Take a look at the Bokeh examples https://demo.bokeh.org/selection_histogram
+*   Interactive SPLOM plots
+*   UMAP UI
+    *   Features selection
+*   AMIRA mask creation
+*   AMIRA mask 
 
-*   Blockers:  
-    *   Can I replace the colormap at runtime without a page reload?
-    *   Can I replace the glyphmap at runtime without a page reload?
-    *   Can I replace the graph layout without replaceing the plot?
-    *   Can I add or remove plots to the SPLOM?
-*   UI Widgets
-    *   Add widgets for selecting the glyph label field
-    *   Add widgets for selecting the color label field
-    *   Add widgets for selecting the features used in UMap
-    *   Add widgets for selecting the features shown in the SPLOM plot
-    *   Add widgets for recomputing the spring layout
-    *   Adjustable size of the vertex glyphs in the graph plot.
 *   Link and Brush
     *   Use a single data source whenever possible
         *   Features (id -> features)
@@ -57,12 +52,17 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
     *   Add the (connected) component id to the vertex attributes
     *   Add a flag as vertex attribute: "root" or "descendant"
     *   Add an edge attribute: "orientation" giving a heuristic value if the edge is oriented correctly. Some value between 0 and 1.
+    *   An important edge attribute could be the budding angle, i.e. the angle between the two corals.
 *   Flower Glyph    
     *   Summarize the current selection 
     *   Flower or Star Glyph, or something similar to the visualization in the Antrag
 *   Map visualization
     *   Location of the dataset on a world map
+*   Other applications
+    *   Jürgen could eventually use the PCA features for the element origin analysis
+        he showed me a year ago. Let's ask him.
 
+Mittag bis 16h
 ## ToDo Next
 
 *   Combine all dataframes into a single Bokeh source
@@ -73,3 +73,21 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 ## Usage
 
 Please take a look at the [examples/](./examples) folder for examples. You should already be familiar with NumPy.
+
+
+*   SPLOM vertices
+    *   filter on prefix
+    *   Show / Hide Table with features below
+*   UMAP
+    *   select features
+    *   UMAP parameters
+    *   show in SPLOM button
+*   SPLOM edges
+*   Graph
+*   Map view
+
+*   Filter data
+    *   I think filtering can essentially be done with a box selection. 
+        However, in that case I would be good to allow multiple "and"
+        selections in different plots and draw overlays for the box
+        regions with some opacity.

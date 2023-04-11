@@ -3,6 +3,10 @@
 
 This module implements a new SPLOM (scatter plot matrix) in Bokeh,
 given a Pandas DataFrame and a list of columns.
+
+The user can interactively select the columns in the Bokeh
+ColumnDataSource that should be displayed in the plot. The SPLOM
+plot support scalar as well as categorical data. 
 """
 
 import logging
@@ -21,55 +25,50 @@ import natsort
 
 
 __all__ = [
-    "Splom",
-    "splom"
+    "Splom"
 ]
 
 
-def selection_callback(attr, old, new):
-    """Called when the user selection changes."""
-    print("cluster selection changed.")
-    return None
 
 
 class Splom(object):
-    """A custom SPLOM plot class for Bokeh because it didn't have one.
+    """A custom SPLOM plot class for Bokeh because it didn't have one. 
     """
 
     def __init__(self):
-        self._df = None
-        self._source = None
+        """ """
+        #: The pandas DataFrame with the original raw data.
+        self.df: pd.DataFrame = None
 
+        #: The Bokeh ColumnDataSource enriched with additional rendering information.
+        self.cds: bokeh.models.ColumnDataSource = None
+
+        #: The column names in :attr:`df` visible in the scatter plot.
         self.plot_column_names = []
-        self.size_column_name = ""
 
         # shared x and y ranges
         self.x_ranges = dict()
         self.y_ranges = dict()
         
-        # colormap depending on the label
-        self.colormap_column_name = ""
-        self.colormap = "blue"
-
-        self._colormap_unique_labels = None
-        self._colormap_label_ids = None
-        self._colormap_label_to_id = None
-
-        # glyph depending on a label field
-        self.glyph_column_name = ""
-        self.glyphmap = "circle"
-        
-        self._glyphmap_unique_labels = None
-        self._glyphmap_label_to_glyph = None
-        self._glyphmap_column = None
-
-        # column name -> x axis dummy plot
+        #: Small figures which only displays the x-axis. These figures
+        #: are placed at the top of the SPLOM in each column.
+        #:
+        #:      column name -> x axis dummy plot
         self.x_axes_plots = dict()
 
-        # column name -> y axis dummy plot
+        #: Small figures which only display the y-axes. These figures
+        #: are placed at the left side of the SPLOM in each row.
+        #:
+        #:      column name -> y axis dummy plot
         self.y_axes_plots = dict()
 
-        # column name -> histogram plot
+        #: The figures for each histogram plot.
+        #:
+        #:      column name -> histogram plot
+        #:
+        #: TODO: Move the histogram plot together with the histogram 
+        #:       column data source into a new class. Eventually, Bokeh
+        #:       will hopefully provide a built-in histogram plot.
         self.histogram_plots = dict()
 
         # (column name x, column name y) -> scatter plot
@@ -81,8 +80,6 @@ class Splom(object):
     
     def init(self):
         """Creates the plots."""
-        self.init_colormap()
-        self.init_glyphmap()
         self.init_ranges()
         self.init_axes_plots()
         # self.init_histogram()
@@ -91,85 +88,6 @@ class Splom(object):
         self.init_grid_layout()
         return None
     
-    def init_colormap(self):
-        """Initialises the colormap which is based on the label field
-        :attr:`colormap_column_name`.
-        """
-        if not self.colormap_column_name:
-            self.colormap = "blue"
-            return None
-        
-        # Get the label column, make them unique and convert them to strings
-        # and eventually add them to the Bokeh data source.
-        #
-        # The Bokeh *factor_cmap* seems to only support string columns, so we
-        # have to convert if for the moment being.
-        labels = self._df[self.colormap_column_name]
-        self._colormap_unique_labels = np.array(natsort.natsorted(np.unique(labels)))
-
-        # Map the label to a unique id.
-        self._colormap_label_to_id = {
-            label: i \
-            for i, label in enumerate(self._colormap_unique_labels)
-        }
-
-        # Create a new column which contains the unique (numeric) label id for each
-        # data sample additionally to the original label column.
-        self._colormap_label_ids = np.array([
-            self._colormap_label_to_id[label] for label in labels
-        ])
-
-        # Use the labels (classes) as colormap.
-        self.colormap = bokeh.transform.factor_cmap(
-            "label", 
-            palette=bokeh.palettes.Spectral5, 
-            factors=self._colormap_unique_labels.astype(str)
-        )
-        return None
-    
-    def init_glyphmap(self):
-        """Intialises the glyph map based on the :attr:`glyph` column."""
-        if not self.glyph_column_name:
-            self.glyphmap = "circle"
-            return None
-        
-        # Get the label column, make them unique and convert them to strings
-        # and eventually add them to the Bokeh data source.
-        #
-        # The Bokeh *factor_cmap* seems to only support string columns, so we
-        # have to convert if for the moment being.
-        labels = self._df[self.glyph_column_name]
-        self._glyphmap_unique_labels = np.array(natsort.natsorted(np.unique(labels)))
-
-        # Map the label to a unique id.
-        markers = [
-            "asterisk",
-            "circle",
-            "cross",
-            "diamond",
-            "hex",
-            "inverted_triangle",
-            "plus",
-            "square",
-            "star",
-            "triangle"
-        ]
-        self._glyphmap_label_to_glyph = {
-            label: glyph \
-            for glyph, label in zip(markers, self._glyphmap_unique_labels)
-        }
-
-        # Create a new column which contains the unique (numeric) label id for each
-        # data sample additionally to the original label column.
-        self._glyphmap_column = np.array([
-            self._glyphmap_label_to_glyph[label] for label in labels
-        ])
-
-        # Use the labels (classes) as colormap.
-        self._source.add(self._glyphmap_column, "_glyph")
-        self.glyphmap="_glyph"
-        return None
-
     def init_ranges(self):
         """Creates the x and y ranges for all available data. The x ranges are
         shared by all plots in the same column of the SPLOM and the y ranges are
