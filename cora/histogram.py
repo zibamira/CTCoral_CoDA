@@ -141,8 +141,8 @@ class HistogramPlot(object):
 
         # Update the render information for all three histograms.
         self.update_cds_all(hist_all, xedges)
-        self.update_cds_selected(hist2d_selected, xedges)
-        self.update_cds_unselected(hist2d_unselected, xedges)
+        self.update_cds_selected(hist2d_selected, hist_all, xedges)
+        self.update_cds_unselected(hist2d_unselected, hist_all, xedges)
         return None
 
     def update_cds_all(self, hist, xedges):
@@ -161,7 +161,7 @@ class HistogramPlot(object):
         self.cds_all.data = data
         return None
     
-    def update_cds_selected(self, hist2d, xedges):
+    def update_cds_selected(self, hist2d, hist_all, xedges):
         """Updates the render information for the histogram of the selected
         data.
         """
@@ -173,7 +173,8 @@ class HistogramPlot(object):
             "bottom": [],
             "color": [],
             "count": [],
-            "label": []
+            "label": [],
+            "ratio": []
         }
 
         # Create a quad for each factor and bin pair in the selection.
@@ -187,6 +188,7 @@ class HistogramPlot(object):
             hist = hist2d[:, ifactor]
             top = bottom + hist
             color = self.label_to_color[factor]
+            ratio = np.where(hist_all > 0, hist/hist_all, 0.0)
 
             data["left"].extend(left)
             data["right"].extend(right)
@@ -195,12 +197,13 @@ class HistogramPlot(object):
             data["color"].extend([color]*nbins)
             data["count"].extend(hist)
             data["label"].extend([factor]*nbins)
+            data["ratio"].extend(ratio)
 
         # Update the Bokeh source at once.
         self.cds_selected.data = data
         return None    
 
-    def update_cds_unselected(self, hist2d, xedges):
+    def update_cds_unselected(self, hist2d, hist_all, xedges):
         """Updates the render information for the histogram of the unselected
         data.
         """
@@ -212,7 +215,8 @@ class HistogramPlot(object):
             "bottom": [],
             "color": [],
             "count": [],
-            "label": []
+            "label": [],
+            "ratio": []
         }
 
         # Create a quad for each factor and bin pair in the selection.
@@ -226,6 +230,7 @@ class HistogramPlot(object):
             top = bottom
             bottom = top - hist
             color = self.label_to_color[factor]
+            ratio = np.where(hist_all > 0, hist/hist_all, 0.0)
 
             data["left"].extend(left)
             data["right"].extend(right)
@@ -234,6 +239,7 @@ class HistogramPlot(object):
             data["color"].extend([color]*nbins)
             data["count"].extend(hist)
             data["label"].extend([factor]*nbins)
+            data["ratio"].extend(ratio)
 
         # Update the Bokeh source at once.
         self.cds_unselected.data = data
@@ -241,25 +247,19 @@ class HistogramPlot(object):
         
     def init_figure(self):
         """Creates the :attr:`figure` displaying the histogram."""
-        self.figure = bokeh.plotting.figure(
+        # Create and configure the figure.
+        p = self.figure = bokeh.plotting.figure(
             width=600, 
             height=600,
-            tools="reset,hover,tap,save",
-            tooltips=[
-                ("Label", "@label"),
-                ("Count", "@count")
-            ]
+            tools="reset,save"
         )
-        p = self.figure
-
-        # Disable the grid.
         p.xaxis.visible = False
         p.xgrid.visible = False
         # p.yaxis.visible = False
         # p.ygrid.visible = False
 
         # Overall histogram
-        p.quad(
+        poverall = p.quad(
             left="left",
             right="right",
             top="top",
@@ -271,7 +271,7 @@ class HistogramPlot(object):
         )
 
         # Selection
-        p.quad(
+        pselected = p.quad(
             left="left",
             right="right",
             top="top",
@@ -282,7 +282,7 @@ class HistogramPlot(object):
         )        
 
         # Inverted selection
-        p.quad(
+        punselected = p.quad(
             left="left",
             right="right",
             top="top",
@@ -292,6 +292,21 @@ class HistogramPlot(object):
             line_color="white",
             source=self.cds_unselected
         )
+
+        # Create a single hover tool that is only used for the 
+        # selection and inverted selection histogram, but not for the
+        # overall histogram.        
+        hover_tool = bokeh.models.HoverTool(
+            renderers=[pselected, punselected],
+            tooltips=[
+            ("label", "@label"),
+            ("count", "@count"),
+            ("ratio", "@ratio{%0.2f}"),
+            ("min", "@left"),
+            ("max", "@right")
+        ]
+        )
+        p.add_tools(hover_tool)
         return None
 
     def set_selection(self, indices=None):
