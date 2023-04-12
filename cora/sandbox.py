@@ -59,6 +59,12 @@ class Application(object):
         #: The Bokeh ColumnDataSource wrapping the edges DataFrame.
         self.cds_edges: bokeh.models.ColumnDataSource = None
 
+        #: The color palette that was used to create the colormap.
+        self.colormap: dict = None
+
+        #: The unique factors in the colormap.
+        self.colormap_factors: list = None
+
         #: Menu for selecting the x-axis data.
         self.ui_select_x = bokeh.models.Select(title="x-axis")
         
@@ -247,17 +253,30 @@ class Application(object):
         nrows = len(self.df)
         column = self.ui_select_color.value
 
-        if column not in self.df:
-            self.df["cora:color"] = ["blue" for i in range(nrows)]
-            return None
+        palette = itertools.cycle(["blue", "green", "yellow", "red", "black", "grey"])
 
+        if column not in self.df:
+            color = palette[0]
+            self.df["cora:color"] = [color for i in range(nrows)]
+            self.df["cora:color_id"] = [0 for i in range(nrows)]
+            return None
+        
+        # Get all unique factors in the discrete label column.
         factors = np.unique(self.df[column])
         factors = list(natsort.natsorted(factors))
+        self.colormap_factors = factors
 
-        palette = itertools.cycle(["blue", "green", "yellow", "red", "black", "grey"])
-        colormap = {factor: color for factor, color in zip(factors, palette)}
+        # Save the palette for later.
+        self.colormap_palette = [color for factor, color in zip(factors, palette)]
 
-        self.df["cora:color"] = [colormap[factor] for factor in self.df[column]]
+        # Create the colormap given a palette of colors.
+        self.colormap = {factor: color for factor, color in zip(factors, self.colormap_palette)}
+        self.df["cora:color"] = [self.colormap[factor] for factor in self.df[column]]
+
+        # Create an additional column with the factor id map. Mapping a factor
+        # to its integer representation.
+        factor_to_id = {factor: i for i, factor in enumerate(factors)}
+        self.df["cora:color_id"] = [factor_to_id[factor] for factor in self.df[column]]
         return None
     
     def update_glyphmap(self):
@@ -403,17 +422,21 @@ class Application(object):
             p = self.figure_histogram
             p.df = self.df
             p.histogram_column_name = self.ui_select_x.value
-            p.label_column_name = self.ui_select_color.value
+            p.labels = self.colormap_factors
+            p.label_id_column_name = "cora:color_id"
+            p.label_to_color = self.colormap
+
+            # TODO: Add event callbacks.            
+
             p.update()
-
-        #     # TODO: Add event callbacks.            
-
             self.update_layout_central()
         else:
             p = self.figure_histogram
+            p.df = self.df
             p.histogram_column_name = self.ui_select_x.value
-            p.label_column_name = self.ui_select_color.value
-            p.selection = self.cds.selected.indices
+            p.labels = self.colormap_factors
+            p.label_id_column_name = "cora:color_id"
+            p.label_to_color = self.colormap
             p.update()
         return None
     
