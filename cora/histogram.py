@@ -56,15 +56,12 @@ class HistogramPlot(object):
 
         #: The ColumnDataSource for the total, overall histogram.
         self.cds_all = bokeh.models.ColumnDataSource()
-        self.cds_all.selected.on_change("indices", self.on_cds_all_selection_change)
 
         #: The ColumnDataSource for the histogram showing the selected data.
         self.cds_selected = bokeh.models.ColumnDataSource()
-        self.cds_selected.selected.on_change("indices", self.on_cds_selected_selection_change)
 
         #: The ColumnDataSource for the histogram showing the not selected data.
         self.cds_unselected = bokeh.models.ColumnDataSource()
-        self.cds_unselected.selected.on_change("indices", self.on_cds_unselected_selection_change)
 
         #: The figure displaying the histogram.
         self.figure: bokeh.models.Model = None
@@ -241,25 +238,7 @@ class HistogramPlot(object):
         # Update the Bokeh source at once.
         self.cds_unselected.data = data
         return None       
-    
-    def on_cds_all_selection_change(self, attr, old, new):
-        """The user selected a bin in the inverted selection (unselected) histogram."""
-        # TODO: Link the selection with the global index selection.
-        print(attr, old, new)
-        return None
-    
-    def on_cds_selected_selection_change(self, attr, old, new):
-        """The user selected a bin in the selection histogram."""
-        # TODO: Link the selection with the global index selection.
-        print(attr, old, new)
-        return None
-    
-    def on_cds_unselected_selection_change(self, attr, old, new):
-        """The user selected a bin in the inverted selection (unselected) histogram."""
-        # TODO: Link the selection with the global index selection.
-        print(attr, old, new)
-        return None
-    
+        
     def init_figure(self):
         """Creates the :attr:`figure` displaying the histogram."""
         self.figure = bokeh.plotting.figure(
@@ -309,7 +288,7 @@ class HistogramPlot(object):
             top="top",
             bottom="bottom",
             fill_color="color",
-            fill_alpha=0.1,
+            fill_alpha=0.6,
             line_color="white",
             source=self.cds_unselected
         )

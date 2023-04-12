@@ -437,6 +437,7 @@ class Application(object):
             p.labels = self.colormap_factors
             p.label_id_column_name = "cora:color_id"
             p.label_to_color = self.colormap
+            p.selection = self.cds.selected.indices
             p.update()
         return None
     
@@ -470,6 +471,8 @@ class Application(object):
         """The user changed the colormap column."""
         self.update_colormap()
         self.cds.data["cora:color"] = self.df["cora:color"]
+
+        self.update_histogram_plot()
         return None
 
     def on_ui_select_glyph_change(self, attr, old, new):
