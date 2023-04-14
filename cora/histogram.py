@@ -43,6 +43,9 @@ class HistogramPlot(object):
         #: and shown in the histogram.
         self.histogram_column_name: str = None
 
+        self.width = 400
+        self.height = 400
+
         #: A list with all unique names in the label column. The order
         #: determines their position in the stack and their id.
         self.labels: list = None
@@ -249,8 +252,8 @@ class HistogramPlot(object):
         """Creates the :attr:`figure` displaying the histogram."""
         # Create and configure the figure.
         p = self.figure = bokeh.plotting.figure(
-            width=600, 
-            height=600,
+            width=self.width, 
+            height=self.height,
             tools="reset,save"
         )
         p.xaxis.visible = False

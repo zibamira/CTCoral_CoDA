@@ -37,6 +37,7 @@ import umap
 from flower import FlowerPlot, FlowerWedge, FlowerCurve
 from graph import GraphPlot
 from histogram import HistogramPlot
+from splom import SplomPlot
 
 
 class Application(object):
@@ -59,11 +60,13 @@ class Application(object):
         #: The Bokeh ColumnDataSource wrapping the edges DataFrame.
         self.cds_edges: bokeh.models.ColumnDataSource = None
 
-        #: The color palette that was used to create the colormap.
+        self.colormap_palette: list = None
+        self.colormap_factors: list = None
         self.colormap: dict = None
 
-        #: The unique factors in the colormap.
-        self.colormap_factors: list = None
+        self.markermap_palette: List[str] = None
+        self.markermap_factors: List[str] = None
+        self.markermap: List[str] = None
 
         #: Menu for selecting the x-axis data.
         self.ui_select_x = bokeh.models.Select(title="x-axis")
@@ -112,8 +115,8 @@ class Application(object):
         #: Button for reloading (generating) the data.
         self.ui_button_reload = bokeh.models.Button(label="Reload")
 
-        #: The plot figure.
-        self.figure: bokeh.models.Model = None
+        #: The plot figure displaying the splom.
+        self.figure_splom: SplomPlot = None
 
         #: The plot figure displaying the flower/star visualization.
         self.figure_flower: FlowerPlot = None
@@ -138,18 +141,20 @@ class Application(object):
         self.update_df()
         self.update_ui()
         self.update_colormap()
-        self.update_glyphmap()
+        self.update_markermap()
         self.update_cds()
         self.update_cds_edges()
-        self.update_plot()
+        self.update_splom_plot()
         self.update_flower_plot()
         self.update_graph_plot()
         self.update_histogram_plot()
 
-        self.layout = bokeh.layouts.row([
-            self.layout_sidebar, 
-            self.layout_central
-        ])
+        # self.layout = bokeh.layouts.row([
+        #     self.layout_sidebar, 
+        #     # self.layout_central
+        #     self.figure_splom.layout
+        # ])
+        self.layout = self.figure_splom.layout
         return None
     
     def update_df(self):
@@ -279,22 +284,36 @@ class Application(object):
         self.df["cora:color_id"] = [factor_to_id[factor] for factor in self.df[column]]
         return None
     
-    def update_glyphmap(self):
-        """Updates the glyph column in the column data source."""
+    def update_markermap(self):
+        """Updates the marker column in the column data source."""
         nrows = len(self.df)
         column = self.ui_select_glyph.value
 
+        palette = itertools.cycle([
+            "asterisk", "circle", "cross", "diamond"
+        ])
+
         if column not in self.df:
-            self.df["cora:glyph"] = ["circle" for i in range(nrows)]
+            marker = palette[0]
+            self.df["cora:marker"] = ["circle" for i in range(nrows)]
+            self.df["cora:marker_id"] = [0 for i in range(nrows)]
             return None
 
+        # Get all unique factors.
         factors = np.unique(self.df[column])
         factors = list(natsort.natsorted(factors))
+        self.markermap_factors = factors
+        
+        # Save the palette for later.
+        self.markermap_palette = [marker for factor, marker in zip(factors, palette)]
 
-        markers = itertools.cycle(["asterisk", "circle", "cross", "diamond"])
-        glyphmap = {factor: marker for factor, marker in zip(factors, markers)}
+        # Create the markermap given a palette of colors.
+        self.markermap = {factor: marker for factor, marker in zip(factors, self.markermap_palette)}
+        self.df["cora:marker"] = [self.markermap[factor] for factor in self.df[column]]
 
-        self.df["cora:glyph"] = [glyphmap[factor] for factor in self.df[column]]
+        # Create an additional column with the factor id map.
+        factor_to_id = {factor: i for i, factor in enumerate(factors)}
+        self.df["cora:marker_id"] = [factor_to_id[factor] for factor in self.df[column]]
         return None
     
     def update_cds(self):
@@ -316,32 +335,48 @@ class Application(object):
             self.cds_edges.data = self.df_edges
         return None
 
-    def update_plot(self):
+    def update_splom_plot(self):
         """Updates the plot based on the current user settings."""   
+        # Create the plot if not yet done.
+        if self.figure_splom is None:
+            created = True
+            self.figure_splom = SplomPlot()
+        else:
+            created = False
+
+        # Update the render information.  
         colx = self.ui_select_x.value
         coly = self.ui_select_y.value
 
-        self.figure = bokeh.plotting.figure(
-            width=600, height=600, syncable=True,
-            tools="pan,lasso_select,box_select,box_zoom,wheel_zoom,reset,hover,tap,save"
-        )
-        s = self.figure.scatter(
-            x=colx, y=coly, syncable=True, source=self.cds,
-            color="cora:color", marker="cora:glyph",
-            size=self.ui_slider_size.value,
-            alpha=self.ui_slider_opacity.value
-        )
+        p = self.figure_splom
 
-        self.ui_slider_size.js_link("value", s.glyph, "size")
-        self.ui_slider_opacity.js_link("value", s.glyph, "fill_alpha")
-        self.ui_slider_opacity.js_link("value", s.glyph, "line_alpha")
+        p.df = self.df
+        p.cds = self.cds
+        p.plot_column_names = [colx, coly]
 
-        # Create the layout if not yet done.
-        if self.layout_central is None:
-            self.layout_central = bokeh.layouts.row([])
+        p.color_factors = self.colormap_factors
+        p.color_column_name = "cora:color"
+        p.color_id_column_name = "cora:color_id"
+        p.colormap = self.colormap
 
-        # Replace the old plot.
-        self.update_layout_central()
+        p.marker_factors = self.markermap_factors
+        p.marker_column_name = "cora:marker"
+        p.marker_id_column_name = "cora:marker_id"
+        p.markermap = self.markermap
+        
+        # TODO: Export the application project and link within the SPLOM plot.
+        # self.ui_slider_size.js_link("value", s.glyph, "size")
+        # self.ui_slider_opacity.js_link("value", s.glyph, "fill_alpha")
+        # self.ui_slider_opacity.js_link("value", s.glyph, "line_alpha")
+
+        p.update_layout()
+
+        if self.layout is not None:
+            self.layout = p.layout
+
+        # # Add the plot to the central layout.
+        # if created:
+        #     self.update_layout_central()
         return None
     
     def update_flower_plot(self):
@@ -444,27 +479,32 @@ class Application(object):
     def update_layout_central(self):
         """Updates the plots in the central layout."""
         children = []
-        if self.figure is not None:
-            children.append(self.figure)
+        if self.figure_splom is not None:
+            children.append(self.figure_splom.layout)
         # if self.figure_flower is not None:
         #     children.append(self.figure_flower.figure)
         # if self.figure_graph is not None:
         #     print("graph in layout")
         #     children.append(self.figure_graph.figure)
-        if self.figure_histogram is not None:
-            children.append(self.figure_histogram.figure)
+        # if self.figure_histogram is not None:
+        #     children.append(self.figure_histogram.figure)
 
-        self.layout_central.children = children
+        # if self.layout_central is None:
+        #     self.layout_central = bokeh.layouts.row()
+        # self.layout_central.children = children
+
+        # self.layout_central = self.figure_splom.layout
+        # self.layout.children = [self.layout_sidebar, self.layout_central]
         return None
     
     def on_ui_select_x_change(self, attr, old, new):
         """The user changed the x data column."""
-        self.update_plot()
+        self.update_splom_plot()
         return None
 
     def on_ui_select_y_change(self, attr, old, new):
         """The user changed the y data column."""
-        self.update_plot()
+        self.update_splom_plot()
         return None
     
     def on_ui_select_color_change(self, attr, old, new):
@@ -478,7 +518,7 @@ class Application(object):
     def on_ui_select_glyph_change(self, attr, old, new):
         """The user changed the glyphmap column."""
         print("glyph change.")
-        self.update_glyphmap()
+        self.update_markermap()
         self.cds.data["cora:glyph"] = self.df["cora:glyph"]
         return None
     
@@ -487,10 +527,10 @@ class Application(object):
         self.update_df()
         self.update_ui()
         self.update_colormap()
-        self.update_glyphmap()
+        self.update_markermap()
         self.update_cds()
         self.update_cds_edges()
-        # self.update_plot()
+        self.update_splom_plot()
         return None
     
     def on_cds_selection_change(self, attr, old, new):
