@@ -37,6 +37,6 @@ class ViewBase(object):
 
         #: A layout that is shown as column (panel) in the Cora
         #: appplication. 
-        self.layout_panel = bokeh.models.Column()
+        self.layout_panel = bokeh.models.Column(sizing_mode="stretch_both")
         return None
     

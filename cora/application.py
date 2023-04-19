@@ -166,7 +166,7 @@ class Application(object):
         # -- Layout --
 
         self.layout_sidebar = bokeh.models.Column(
-            width=400, 
+            width=320, 
             sizing_mode="stretch_height"
         )
 

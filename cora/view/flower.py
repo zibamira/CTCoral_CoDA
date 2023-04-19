@@ -8,25 +8,26 @@ curve, which both are more beautiful.
 """
 
 import functools
-import itertools
-from pprint import pprint
 from typing import Dict, List, Any, Literal
 
 import bokeh
 import bokeh.plotting
-import bokeh.model
 import bokeh.models
-import bokeh.layouts
 import bokeh.palettes
 
 import pandas as pd
 import numpy as np
 
+from cora.application import Application
+from cora.utils import scalar_columns
+from cora.view.base import ViewBase
+
 
 __all__ = [
     "FlowerPlot",
     "FlowerWedge",
-    "FlowerCurve"
+    "FlowerCurve",
+    "FlowerView"
 ]
 
 
@@ -89,7 +90,7 @@ class FlowerPlot(object):
             self.indices = indices
         return None
 
-    def upadte_cds_label_data(self):
+    def update_cds_label_data(self):
         """Updates the positions of the labels.
 
         The labels are drawn outside each petal, oriented towards
@@ -176,7 +177,7 @@ class FlowerPlot(object):
         })
 
         # Also update the label positions.
-        self.upadte_cds_label_data()
+        self.update_cds_label_data()
         return None
     
     def update_cds(self):
@@ -212,8 +213,7 @@ class FlowerPlot(object):
         # the origin.
         # Additional space is allocated for the labels outside the glyph.
         p = bokeh.plotting.figure(
-            width=600, 
-            height=600, 
+            sizing_mode="scale_both",
             syncable=True,
             tools="reset,save,pan,wheel_zoom"
         )
@@ -418,7 +418,7 @@ class FlowerCurve(FlowerPlot):
         return None
 
     def draw_petals(self):
-        """Creates the renderer for the petal polygons."""
+        """Creates the glyph renderer for the petal polygons."""
         p = self.figure
         ncolumns = len(self.df.columns)
 
@@ -429,4 +429,68 @@ class FlowerCurve(FlowerPlot):
             line_color="grey",
             source=self.cds
         )
+        return None
+    
+
+class FlowerView(ViewBase):
+    """Handles the flower plot view."""
+
+    def __init__(self, app: Application):
+        super().__init__(app)
+
+        #: UI for switching between the different flower types.
+        self.ui_select_flower = bokeh.models.Select(
+            title="Flower",
+            options=["wedge", "rose", "drop"],
+            value="rose"
+        )
+        self.ui_select_flower.on_change(
+            "value", self.on_ui_select_flower_change
+        )
+        
+        #: The actual flower plot model.
+        self.flower: FlowerPlot = None
+        self.app.cds.selected.on_change(
+            "indices", self.on_cds_selection_change
+        )
+
+        # Init.
+        self.layout_sidebar.children = [self.ui_select_flower]
+        self.update()
+        return None
+
+    def on_ui_select_flower_change(self, attr, old, new):
+        """The user changed the flower type."""
+        self.update()
+        return None
+
+    def on_cds_selection_change(self, attr, old, new):
+        """The selected rows changed."""
+        if self.flower:
+            self.flower.set_selection(new)
+            self.flower.update_cds()
+        return None
+
+    def update(self):
+        """Creates and initializes the FlowerPlot."""
+        if self.ui_select_flower.value == "rose":
+            p = FlowerCurve()
+            p.curve = "rose"
+        elif self.ui_select_flower.value == "drop":
+            p = FlowerCurve()
+            p.curve = "drop"
+        else:
+            p = FlowerWedge()
+
+        # Only use scalar fields for the flower.
+        # :todo: Use a shared, "global" vertex multi-choice menu.
+        df = self.app.df[scalar_columns(self.app.df)]
+
+        p.set_df(df)
+        p.set_selection(self.app.cds.selected.indices)
+        p.update_cds()
+        p.create_figure()
+        
+        self.flower = p
+        self.layout_panel.children = [p.figure]
         return None
