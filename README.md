@@ -22,6 +22,13 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 
 ## Visualization
 
+*   TableView\
+    This view shows the raw data columns.
+*   FlowerView\
+    This view shows a flower (start) plot of 
+    the aggregated selected data.
+
+
 *   Scatter Plots\
     The user can select and configure a scatter plot with all features.
 *   Dimensionality Reduction\
@@ -35,21 +42,48 @@ Please take a look at the [examples/](./examples) folder for examples. You shoul
 
 ## ToDo
 
-*   Interactive SPLOM plots
-*   UMAP UI
-    *   Features selection
+# Monday
+
+*   Histogram
+    *   Create a *Histogram* plot which takes a figure
+        and adds the plot there, returning a reference to the internal 
+        data.
+    *   Create a *HistogramView* class that displays a single
+        histogram and also performs the data synhronization.
+*   Add the sidebar back to the layout.
+*   Add select menues for the SPLOM plot.
+*   Add prefix based groups for selecting the columns to display fast.
+*   Move the y-axes to the left and the histogram axes to the right\
+    and transpose the histogram.
+
+# Tuesday
+
+*   Create the UMAP UI and widget.
+    *   Feature selection
+    *   UMap parameters
+*   Visualize the location in a map view.
+    *   Add a location column to the vertex data provider
+    *   Add a map view.
+
+# Wednesday
+
 *   Use new attributes in the application class "image_vertices" and "image_edges"
+    *   I don't know why I wrote this todo point. Probably for thumbnails
+        of the vertices and edges
+
+# Thursday
+
 *   AMIRA data provider
     *   new class "data provider" which sets up the project
     *   encapsulates the reload button, has a dirty flag
     *   selection mask synchronization
     *   create a new tool for seeking the instance in Amira, take a look at https://docs.bokeh.org/en/2.4.1/docs/user_guide/extensions_gallery/tool.html
+
+# Future
+
 *   Clean up UI
     *   clean up controls in code
     *   add group filters/prefix filters in select menus
-*   Add a column for the location of the coral specimen. This may also be part
-    of the Amira data provider. 
-*   Visualize the location in a map view.
 
 *   Compute the orientation of the edges and a likelihood for the correct
     orientation. This code could be part of the Amira data provider.
@@ -63,6 +97,8 @@ Please take a look at the [examples/](./examples) folder for examples. You shoul
 *   Approximate the medial line by a quadratic curve (parabola) fitted
     to the point cloud of a polyp. The second order coefficient (curvature)
     and the first order coefficient (straightness) may be useful features.
+*   Center Line Tree
+    Radius Lifting Tree Paper
     
 *   Other applications
     *   Jürgen could eventually use the PCA features for the element origin analysis

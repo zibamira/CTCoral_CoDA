@@ -16,8 +16,11 @@ import bokeh.plotting
 import bokeh.models
 import bokeh.layouts
 
+from natsort import natsorted
 import pandas as pd
 import numpy as np
+
+from utils import FactorMap
 
 
 __all__ = [
@@ -26,36 +29,51 @@ __all__ = [
 
 
 class HistogramPlot(object):
-    """The interactive Histogram."""
+    """A high level histogram plotting interface. This class
+    takes shows a (stacked) bar chart of the histogram in a given
+    column of the data frame. 
+
+    The histogram is drawn as stacked area chart if an additional
+    label column is given. Then each stack in the bar of a single
+    bin corresponds to a label.
+
+    The histogram is interactive and computed for the current selection
+    as well as the inverted selection, so that both histograms can be
+    compared directly.
+    """
 
     def __init__(self):
         """ """
-        #: The raw, not aggregated data.
+        #: *input* The raw, not aggregated data.
         self.df: pd.DataFrame = None
 
-        #: The indices of the current selection.
-        self.selection: list = None
+        #: *input* The column data frame corresponding to :attr:`df`.
+        self.cds: bokeh.models.ColumnDataSource = None
 
-        #: The number of bins to use in the histogram.
-        self.nbins: int = 10
+        #: *input* The figure on which the histogram is plotted.
+        self.figure: bokeh.models.Model = None
 
-        #: The column in the data frame :attr:`df` which is binned
+
+        #: *input* The column in the data frame :attr:`df` which is binned
         #: and shown in the histogram.
         self.histogram_column_name: str = None
 
-        self.width = 400
-        self.height = 400
 
-        #: A list with all unique names in the label column. The order
-        #: determines their position in the stack and their id.
-        self.labels: list = None
+        #: *input*The number of bins to use in the histogram.
+        self.nbins: int = 10
 
-        #: The name with the column of the discrete label ids (numeric)
-        #: in the data frame :attr:`df`.
-        self.label_id_column_name: str = None
+        #: *input* The binning range of the histogram. If *None*, 
+        #: then the range is infered from the data quantiles.
+        self.bin_range = (None, None)
 
-        #: A colormap, mapping the label name to their color.
-        self.label_to_color: Dict[str, Any] = None
+
+        #: *input* The factor map which determines the stacks in the histogram
+        #: bar chart.
+        self.factor_map: FactorMap = None
+
+        #: The largest bin count in the histogram. This valus is used
+        #: for scaling the visual appearance.
+        self.hist_max: int = 0
 
         #: The ColumnDataSource for the total, overall histogram.
         self.cds_all = bokeh.models.ColumnDataSource()
@@ -65,53 +83,21 @@ class HistogramPlot(object):
 
         #: The ColumnDataSource for the histogram showing the not selected data.
         self.cds_unselected = bokeh.models.ColumnDataSource()
-
-        #: The figure displaying the histogram.
-        self.figure: bokeh.models.Model = None
         return None
-
-    def set_label_column_name(self, name):
-        """Sets the name of the column to use as label. The histogram bars 
-        are stacks of these label-wise histograms.
-        """
-        # Nothing to do.
-        if name == self.label_column_name:
-            return None
-
-        # Compute the unique labels.
-        labels = self.df[name]
-        unique = np.unique(labels)
-
-        # Map the labels to unique ids.
-        self.label_to_id = {label: i for i, label in enumerate(unique)}
-
-        # Create the id column.
-        self.label_ids = np.array([self.label_to_id(label) for label in labels])
-        return None
-
-    def range(self):
-        """Returns the range of the histogram. If the plot already 
-        exists, then this is just the range that is visible. Otherwise,
-        the (min, max) of the data column is used.
-        """
-        # if self.figure is not None:
-        #     r = self.figure.x_range
-        #     return (r.start, r.end)        
-        col = self.df[self.histogram_column_name]
-        return (col.min(), col.max())
         
     def compute_histogram(self):
         """Computes a stacked histogram. A histogram is computed for each 
         pair of (selected/unselected, label, bin).
         """
-        xmin, xmax = self.range()
         nbins = self.nbins
-        nfactors = len(self.label_to_color)
-        
-        xvalues = self.df[self.histogram_column_name]
-        yvalues = self.df[self.label_id_column_name]
 
+        xvalues = self.df[self.histogram_column_name]
+        xmin = self.bin_range[0] if self.bin_range[0] else np.min(xvalues)
+        xmax = self.bin_range[1] if self.bin_range[1] else np.max(xvalues)
         xedges = np.linspace(xmin, xmax, num=nbins + 1, endpoint=True)
+
+        nfactors = len(self.factor_map.factors)
+        yvalues = self.factor_map.id_column
         yedges = np.linspace(-0.5, nfactors - 0.5, nfactors + 1)
 
         # Compute a stacked histogram for both the selection and inverted
@@ -149,7 +135,8 @@ class HistogramPlot(object):
         return None
 
     def update_cds_all(self, hist, xedges):
-        """Updates the render information for the overall histogram."""
+        """Updates the render information for the overall histogram.
+        """
         nbins = self.nbins
         data = {
             "left": xedges[:-1],
@@ -186,7 +173,7 @@ class HistogramPlot(object):
         right = xedges[1:]
         top = np.zeros_like(left)
 
-        for ifactor, factor in enumerate(self.labels):
+        for ifactor, factor in enumerate(self.factor_map.factors):
             bottom = top
             hist = hist2d[:, ifactor]
             top = bottom + hist
@@ -228,7 +215,7 @@ class HistogramPlot(object):
         right = xedges[1:]
         bottom = np.zeros_like(left)
 
-        for ifactor, factor in enumerate(self.labels):
+        for ifactor, factor in enumerate(self.factor_map.factors):
             hist = hist2d[:, ifactor]
             top = bottom
             bottom = top - hist

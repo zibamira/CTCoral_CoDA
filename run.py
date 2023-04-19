@@ -6,39 +6,18 @@
 Sets up the WSGI application and starts it.
 """
 
-import argparse
-import asyncio
-import pathlib
-import sys
-import shutil
+import bokeh
+import bokeh.plotting
 
-import aiohttp
-
-try:
-    from cora.app import create_app
-except ImportError:
-    from .cora.app import create_app
+import cora
+import cora.application
+import cora.data_provider
 
 
-# Check the command line for the instance directory.
-this_dir = pathlib.Path(__file__).absolute().parent
-parser = argparse.ArgumentParser(
-    prog = "CORA - The Coral Explorer",
-    description = "Launches the explorer into space. The cyber space."
-)
-parser.add_argument(
-    "instance_dir", 
-    type=pathlib.Path, 
-    default=this_dir / "instance"
-)
-args = parser.parse_args()
+provider = cora.data_provider.RandomDataProvider()
+app = cora.application.Application(provider)
+app.reload()
 
-# Restore the original test data.
-shutil.copytree(this_dir / "instance" / "data_copy", this_dir / "instance" / "data", dirs_exist_ok=True)
-
-# Create the WSGI application.
-app = asyncio.run(create_app(args.instance_dir))
-
-
-if __name__ == "__main__":
-    aiohttp.web.run_app(app)
+doc = bokeh.plotting.curdoc()
+doc.add_root(app.layout)
+doc.set_title("Cora - The Coral Explorer")

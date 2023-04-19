@@ -24,6 +24,7 @@ import numpy as np
 import natsort
 
 from histogram import HistogramPlot
+from utils import FactorMap
 
 
 __all__ = [
@@ -41,25 +42,26 @@ class SplomPlot(object):
 
     def __init__(self):
         """ """
-        #: The pandas DataFrame with the original raw data.
+        #: *input* The pandas DataFrame with the original raw data.
         self.df: pd.DataFrame = None
 
-        #: The Bokeh ColumnDataSource enriched with additional rendering information.
+        #: *input* The Bokeh ColumnDataSource enriched with additional rendering information.
         self.cds: bokeh.models.ColumnDataSource = None
         
-        #: The column names in :attr:`df` visible in the scatter plot.
+        #: *input* The column names in :attr:`df` visible in the scatter plot.
         self.plot_column_names: List[str] = []
 
-        self.color_factors: List[str] = None
-        self.color_column_name: str = None
-        self.color_id_column_name: str = None
-        self.colormap: Dict[str] = None
+        #: *input* The color map.
+        self.fmap_color: FactorMap = None
 
-        self.marker_factors: List[str] = None
-        self.marker_column_name: str = None
-        self.marker_id_column_name: str = None
-        self.markermap: Dict[str] = None
+        #: *input* The marker map.
+        self.fmap_marker: FactorMap = None
 
+        #: The width and height of each plot in the SPLOM.
+        #:
+        #: :todo: Determine this value automatic depenending on the available
+        #:        screen space. Or check if Bokeh layouts are capable of 
+        #:        handling this in a responsive way.
         self.width = 400
 
         #: The shared x range for each column in the data frame.

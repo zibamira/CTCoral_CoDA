@@ -35,7 +35,7 @@ class FlowerPlot(object):
 
     def __init__(self):
         """ """
-        #: The dataframe containing all samples. The data here is used to determine
+        #: *input* The dataframe containing all samples. The data here is used to determine
         #: the overall scale of the petals.
         self.df: pd.DataFrame = None
 
