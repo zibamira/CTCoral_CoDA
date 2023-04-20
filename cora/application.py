@@ -90,7 +90,8 @@ class Application(object):
         # -- UI controls input --
 
         self.ui_button_reload = bokeh.models.Button(
-            label="Reload", button_type="primary"
+            label="Reload", button_type="primary",
+            sizing_mode="stretch_width"
         )        
         self.ui_button_reload.on_click(self.on_ui_button_reload_click)
 
@@ -98,39 +99,43 @@ class Application(object):
         # -- UI controls vertex appearance --
 
         #: Menu for selecting the column used for the colormap.
-        self.ui_select_color = bokeh.models.Select(title="color")
+        self.ui_select_color = bokeh.models.Select(title="Color", sizing_mode="stretch_width")
         self.ui_select_color.on_change("value", self.on_ui_select_color_change)
 
         #: Menu for selecting the column used for the glyphmap.
-        self.ui_select_marker = bokeh.models.Select(title="glyph")
+        self.ui_select_marker = bokeh.models.Select(title="Marker", sizing_mode="stretch_width")
         self.ui_select_marker.on_change("value", self.on_ui_select_marker_change)
 
         #: Slider for adjusting the glyph size.
         self.ui_slider_size = bokeh.models.Slider(
-            title="size", start=1, end=20, value=8, step=1
+            title="Size", start=10, end=40, value=12, step=1,
+            show_value=False
         )
 
         #: Slider for adjusting the opacity.
         self.ui_slider_opacity = bokeh.models.Slider(
-            title="opacity", start=0.0, end=1.0, value=1.0, step=0.05
+            title="Opacity", start=0.0, end=1.0, value=1.0, step=0.05,
+            show_value=False
         )
 
 
         # -- UI controls edge appearance --
 
         #: Menu for selecting the column used for the edge colormap.
-        self.ui_select_color_edges = bokeh.models.Select(title="color")
+        self.ui_select_color_edges = bokeh.models.Select(title="Color", sizing_mode="stretch_width")
         self.ui_select_color_edges.on_change("value", self.on_ui_select_color_edges_change)
 
         #: Slider for adjusting the size of the edges.
         self.ui_slider_edge_size = bokeh.models.Slider(
-            title="edge size", start=1.4, end=8, value=1, step=0.05
+            title="Size", start=1.0, end=4, value=1.2, step=0.05,
+            show_value=False
         )
 
         #: Slider for adjusting the opacity of the edges.
         #: This may help to reduce visual clutter in dense graph layouts.
         self.ui_slider_edge_opacity = bokeh.models.Slider(
-            title="edge opacity", start=0.0, end=1.0, value=1.0, step=0.05
+            title="Opacity", start=0.0, end=1.0, value=1.0, step=0.05,
+            show_value=False
         )
 
 
@@ -138,9 +143,10 @@ class Application(object):
 
         #: Menu for selecting the view in the left panel.
         self.ui_select_panel_left = bokeh.models.Select(
-            title="Left Panel",
+            title="Plot Type",
             options=["None", "Vertex Table", "Graph", "Flower"],
-            value="Graph"
+            value="Graph", 
+            sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
             "value", self.on_ui_select_panel_left_change
@@ -148,9 +154,10 @@ class Application(object):
 
         #: Menu for selecting the view in the right panel.
         self.ui_select_panel_right = bokeh.models.Select(
-            title="Right panel",
+            title="Plot Type",
             options=["None", "Vertex Table", "Graph", "Flower"],
-            value="None"
+            value="None", 
+            sizing_mode="stretch_width"
         )
         self.ui_select_panel_right.on_change(
             "value", self.on_ui_select_panel_right_change
@@ -261,25 +268,25 @@ class Application(object):
     def update_layout_sidebar(self):
         """Updates the layout of the sidebar."""
         children = [
-            bokeh.models.Div(text="<strong>Cora</strong>"),
+            bokeh.models.Div(text="<strong>Cora</strong>", align="center"),
             self.ui_button_reload,
-            bokeh.models.Div(text="<strong>Vertex Appearance</strong>"),
+            bokeh.models.Div(text="<strong>Vertex Appearance</strong>", align="center"),
             self.ui_select_color,
             self.ui_select_marker,
             self.ui_slider_size,
             self.ui_slider_opacity,
-            bokeh.models.Div(text="<strong>Edge Appearance</strong>"),
+            bokeh.models.Div(text="<strong>Edge Appearance</strong>", align="center"),
             self.ui_select_color_edges,
             self.ui_slider_edge_size,
             self.ui_slider_edge_opacity
         ]
 
-        children.append(bokeh.models.Div(text="<strong>Left Panel</strong>"))
+        children.append(bokeh.models.Div(text="<strong>Left Panel</strong>", align="center"))
         children.append(self.ui_select_panel_left)
         if self.panel_left is not None and self.panel_left.layout_sidebar.children:
             children.append(self.panel_left.layout_sidebar)
 
-        children.append(bokeh.models.Div(text="<strong>Right Panel</strong>"))
+        children.append(bokeh.models.Div(text="<strong>Right Panel</strong>", align="center"))
         children.append(self.ui_select_panel_right)
         if self.panel_right is not None and self.panel_right.layout_sidebar.children:
             children.append(self.panel_right.layout_sidebar)

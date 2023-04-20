@@ -213,9 +213,12 @@ class FlowerPlot(object):
         # the origin.
         # Additional space is allocated for the labels outside the glyph.
         p = bokeh.plotting.figure(
-            sizing_mode="scale_both",
             syncable=True,
-            tools="reset,save,pan,wheel_zoom"
+            tools="reset,save,pan,wheel_zoom",
+            match_aspect=True,
+            sizing_mode="scale_both",
+            toolbar_location="above",
+            title="Flower"
         )
         p.xaxis.visible = False
         p.yaxis.visible = False
@@ -442,7 +445,8 @@ class FlowerView(ViewBase):
         self.ui_select_flower = bokeh.models.Select(
             title="Flower",
             options=["wedge", "rose", "drop"],
-            value="rose"
+            value="rose",
+            sizing_mode="stretch_width"
         )
         self.ui_select_flower.on_change(
             "value", self.on_ui_select_flower_change

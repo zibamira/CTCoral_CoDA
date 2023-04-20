@@ -11,6 +11,7 @@ The graph layouts are computed with the networkx package.
 from typing import List, Literal
 
 import bokeh
+import bokeh.layouts
 import bokeh.models
 import bokeh.plotting
 
@@ -63,8 +64,9 @@ class GraphView(ViewBase):
 
         #: Menu for selecting the graph layout algorithm.
         self.ui_select_graph_layout = bokeh.models.Select(
-            title="Graph Layout",
-            options=self.LAYOUT_ALGORITHMS
+            title="Layout Algorithm",
+            options=self.LAYOUT_ALGORITHMS,
+            sizing_mode="stretch_width"
         )
         self.ui_select_graph_layout.on_change(
             "value", self.on_ui_select_graph_layout_change
@@ -72,13 +74,16 @@ class GraphView(ViewBase):
 
         #: Button for recomputing the graph layout.
         self.ui_button_recompute_graph_layout = bokeh.models.Button(
-            label="Refresh layout"
+            label="Recompute layout",
+            sizing_mode="stretch_width",
+            button_type="primary"
         )
         self.ui_button_recompute_graph_layout.on_click(
             self.on_ui_button_recompute_layout_click
         )
 
         self.layout_sidebar.children = [
+            bokeh.models.Paragraph(text="Draw Arrows"),
             self.ui_switch_arrow,
             self.ui_select_graph_layout,
             self.ui_button_recompute_graph_layout
@@ -231,7 +236,9 @@ class GraphView(ViewBase):
                 ("target", "@target"),
                 ("input:col A", "@{input:col A}")
             ],
-            sizing_mode="scale_both"
+            sizing_mode="scale_both",
+            toolbar_location="above",
+            title="Graph"
         )
         p.xaxis.visible = False
         p.yaxis.visible = False

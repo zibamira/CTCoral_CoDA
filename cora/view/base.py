@@ -33,10 +33,13 @@ class ViewBase(object):
         #: is active. This layout should contain the control widgets
         #: specific to this view.
         self.layout_sidebar = bokeh.models.Column(
+            sizing_mode="stretch_width"
         )
 
         #: A layout that is shown as column (panel) in the Cora
         #: appplication. 
-        self.layout_panel = bokeh.models.Column(sizing_mode="stretch_both")
+        self.layout_panel = bokeh.models.Column(
+            sizing_mode="stretch_both"
+        )
         return None
     
