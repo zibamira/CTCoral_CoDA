@@ -84,7 +84,7 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
     spreadsheet view could also be colored accordingly.
 *   HistogramView\
     Add classical boxplot features like whiskers, min max
-    and outlier views. Draw continous, kernel-density estimator based curves.
+    and outlier views. 
 *   ImageView and Thumbnails\
     Add a column to the data frame with the paths to images for each sample. The ImageView shows a grid with the thumbnails of the current selection and the thumbnails may also be attached to the hover tool.
 
