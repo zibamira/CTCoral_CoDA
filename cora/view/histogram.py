@@ -20,7 +20,7 @@ from natsort import natsorted
 import pandas as pd
 import numpy as np
 
-from utils import FactorMap
+from cora.utils import FactorMap
 
 
 __all__ = [
@@ -42,34 +42,38 @@ class HistogramPlot(object):
     compared directly.
     """
 
-    def __init__(self):
+    def __init__(
+        self, 
+        *, 
+        source: bokeh.models.ColumnDataSource,
+        field: str,
+        figure: bokeh.models.Model,
+        nbins: int = 10,
+        factor_map: FactorMap = None
+        ):
         """ """
-        #: *input* The raw, not aggregated data.
-        self.df: pd.DataFrame = None
+        #: *input* The figure on which the histogram is drawn.
+        self.figure = figure
 
         #: *input* The column data frame corresponding to :attr:`df`.
-        self.cds: bokeh.models.ColumnDataSource = None
-
-        #: *input* The figure on which the histogram is plotted.
-        self.figure: bokeh.models.Model = None
-
+        self.cds = source
+        self.cds.selected.on_change("indices", self.on_cds_selected_change)
 
         #: *input* The column in the data frame :attr:`df` which is binned
         #: and shown in the histogram.
-        self.histogram_column_name: str = None
-
+        self.field = field
 
         #: *input*The number of bins to use in the histogram.
-        self.nbins: int = 10
+        self.nbins: int = nbins
 
         #: *input* The binning range of the histogram. If *None*, 
         #: then the range is infered from the data quantiles.
         self.bin_range = (None, None)
 
-
         #: *input* The factor map which determines the stacks in the histogram
         #: bar chart.
-        self.factor_map: FactorMap = None
+        self.factor_map = factor_map
+        self.factor_map.on_update.connect(self.on_factor_map_update)
 
         #: The largest bin count in the histogram. This valus is used
         #: for scaling the visual appearance.
@@ -83,28 +87,32 @@ class HistogramPlot(object):
 
         #: The ColumnDataSource for the histogram showing the not selected data.
         self.cds_unselected = bokeh.models.ColumnDataSource()
+
+        self.update()
+        self.draw()
         return None
-        
+
     def compute_histogram(self):
         """Computes a stacked histogram. A histogram is computed for each 
         pair of (selected/unselected, label, bin).
         """
         nbins = self.nbins
 
-        xvalues = self.df[self.histogram_column_name]
+        xvalues = np.asarray(self.cds.data[self.field])
         xmin = self.bin_range[0] if self.bin_range[0] else np.min(xvalues)
         xmax = self.bin_range[1] if self.bin_range[1] else np.max(xvalues)
         xedges = np.linspace(xmin, xmax, num=nbins + 1, endpoint=True)
 
         nfactors = len(self.factor_map.factors)
-        yvalues = self.factor_map.id_column
+        yvalues = np.asarray(self.factor_map.id_column)
         yedges = np.linspace(-0.5, nfactors - 0.5, nfactors + 1)
 
         # Compute a stacked histogram for both the selection and inverted
         # selection, *if* data is selected.
-        if self.selection:
+        selection = self.cds.selected.indices
+        if selection:
             selection_mask = np.full_like(xvalues, False, dtype=bool)
-            selection_mask[self.selection] = True
+            selection_mask[selection] = True
 
             hist2d_selected, _, _ = np.histogram2d(
                 x=xvalues[selection_mask], 
@@ -177,7 +185,7 @@ class HistogramPlot(object):
             bottom = top
             hist = hist2d[:, ifactor]
             top = bottom + hist
-            color = self.label_to_color[factor]
+            color = self.factor_map.palette[ifactor]
             ratio = np.where(hist_all > 0, hist/hist_all, 0.0)
 
             data["left"].extend(left)
@@ -219,7 +227,7 @@ class HistogramPlot(object):
             hist = hist2d[:, ifactor]
             top = bottom
             bottom = top - hist
-            color = self.label_to_color[factor]
+            color = self.factor_map.palette[ifactor]
             ratio = np.where(hist_all > 0, hist/hist_all, 0.0)
 
             data["left"].extend(left)
@@ -235,18 +243,16 @@ class HistogramPlot(object):
         self.cds_unselected.data = data
         return None       
         
-    def init_figure(self):
-        """Creates the :attr:`figure` displaying the histogram."""
-        # Create and configure the figure.
-        p = self.figure = bokeh.plotting.figure(
-            width=self.width, 
-            height=self.height,
-            tools="reset,save"
-        )
-        p.xaxis.visible = False
-        p.xgrid.visible = False
-        # p.yaxis.visible = False
-        # p.ygrid.visible = False
+    def update(self):
+        """Recomputes the histogram and updates the column data sources."""
+        self.compute_histogram()
+        self.figure.y_range.start = -1.05*self.hist_max
+        self.figure.y_range.end = 1.05*self.hist_max
+        return None 
+
+    def draw(self):
+        """Creates the glyphs displaying the histogram in the :attr:`figure`."""
+        p = self.figure
 
         # Overall histogram
         poverall = p.quad(
@@ -299,18 +305,12 @@ class HistogramPlot(object):
         p.add_tools(hover_tool)
         return None
 
-    def set_selection(self, indices=None):
-        """Sets the current selection."""
-        self.selection = indices
+    def on_cds_selected_change(self, attr, old, new):
+        """Recompute the histogram when the user selection changes."""
+        self.update()
         return None
 
-    def update(self):
-        """Recomputes the histogram."""
-        self.compute_histogram()
-
-        if self.figure is None:
-            self.init_figure()
-
-        self.figure.y_range.start = -1.05*self.hist_max
-        self.figure.y_range.end = 1.05*self.hist_max
-        return None 
+    def on_factor_map_update(self, sender=None):
+        """Called when the user changed the factor map."""
+        self.update()
+        return None

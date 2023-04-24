@@ -9,60 +9,56 @@ ColumnDataSource that should be displayed in the plot. The SPLOM
 plot support scalar as well as categorical data. 
 """
 
-import logging
-import pathlib
-from pprint import pprint
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 import bokeh
 import bokeh.plotting
 import bokeh.models
 import bokeh.layouts
 
-import pandas as pd
-import numpy as np
-import natsort
-
-from histogram import HistogramPlot
-from utils import FactorMap
+from cora.application import Application
+from cora.view.base import ViewBase
+from cora.view.histogram import HistogramPlot
+from cora.utils import FactorMap, scalar_columns
 
 
 __all__ = [
-    "SplomPlot"
+    "SplomView"
 ]
 
 
-class SplomPlot(object):
-    """A custom SPLOM plot class for Bokeh because it didn't have one. The user can interactively
-    choose which columns should be shown in the SPLOM.
+class SplomView(ViewBase):
+    """A custom SPLOM plot class for Bokeh because it didn't have one. 
+    The user can interactively choose which columns should be shown in the SPLOM.
+    Additionally, the diagonal plots may be chose as scatter plots or more sophisticated
+    cross-tabular histgorams.
     """
 
     # TODO: I think most of the shared ranges should be part of the cora application
     #       instance so that it can be synchronized globally, e.g. the ranges.
+    # TODO: Implement the gridplot using "sizing_mode=stretch_both". This results
+    #       in a responsive layout. However, in Bokeh version 3.1.0. the responsive
+    #       layout also allocated the same space for the smaller dummy axis plots,
+    #       resulting in wasted screen space. 
 
-    def __init__(self):
-        """ """
-        #: *input* The pandas DataFrame with the original raw data.
-        self.df: pd.DataFrame = None
-
-        #: *input* The Bokeh ColumnDataSource enriched with additional rendering information.
-        self.cds: bokeh.models.ColumnDataSource = None
+    def __init__(self, app: Application):
+        super().__init__(app)
         
-        #: *input* The column names in :attr:`df` visible in the scatter plot.
-        self.plot_column_names: List[str] = []
-
-        #: *input* The color map.
-        self.fmap_color: FactorMap = None
-
-        #: *input* The marker map.
-        self.fmap_marker: FactorMap = None
+        #: Menu for selecting the columns that should be visible in the SPLOM.
+        self.ui_multichoice_columns = bokeh.models.MultiChoice(
+            title="Columns",
+            options=scalar_columns(self.app.df),
+            sizing_mode="stretch_width"
+        )
+        self.ui_multichoice_columns.value = self.ui_multichoice_columns.options[:3]
+        self.ui_multichoice_columns.on_change("value", self.on_multichoice_columns_change)
 
         #: The width and height of each plot in the SPLOM.
         #:
         #: :todo: Determine this value automatic depenending on the available
         #:        screen space. Or check if Bokeh layouts are capable of 
         #:        handling this in a responsive way.
-        self.width = 400
+        self.width = 200
 
         #: The shared x range for each column in the data frame.
         self.x_ranges: Dict[str, bokeh.models.Range1d] = dict()
@@ -90,8 +86,12 @@ class SplomPlot(object):
         # (column name x, column name y) -> scatter plot
         self.scatter_plots: Dict[str, bokeh.models.Model] = dict()
 
-        # The grid layout with all plots.
-        self.layout = bokeh.models.Column()
+        # Init.
+        self.layout_sidebar.children = [
+            self.ui_multichoice_columns
+        ]
+        
+        self.update_layout()
         return None
     
     def create_range(self, column_name: str):
@@ -102,7 +102,7 @@ class SplomPlot(object):
         if column_name in self.x_ranges:
             return None
 
-        values = self.df[column_name]
+        values = self.app.df[column_name]
         vmin = values.min()
         vmax = values.max()
 
@@ -129,12 +129,14 @@ class SplomPlot(object):
 
         # y axis
         py = bokeh.plotting.figure(
-            width=80, 
-            height=self.width, 
+            width=60, 
+            height=self.width,
+            sizing_mode="fixed",
             x_range=self.x_ranges[column_name], 
             y_range=self.y_ranges[column_name],
-            y_axis_location="right", 
-            outline_line_color=None
+            y_axis_location="left", 
+            outline_line_color=None,
+            toolbar_location=None
         )
         py.scatter([], [])
         py.xaxis.visible = False
@@ -148,12 +150,14 @@ class SplomPlot(object):
 
         # x axis
         px = bokeh.plotting.figure(
-            width=self.width, 
+            width=self.width,
             height=60, 
             x_range=self.x_ranges[column_name], 
             y_range=self.y_ranges[column_name], 
             x_axis_location="above", 
-            outline_line_color=None
+            outline_line_color=None,
+            sizing_mode="fixed",
+            toolbar_location=None
         )
         px.scatter([], [])
         px.yaxis.visible = False
@@ -173,37 +177,29 @@ class SplomPlot(object):
 
         # Create the range if not yet done.
         self.create_range(column_name)
+        x_range = self.x_ranges[column_name]
 
         # Create the histogram.
-        p = HistogramPlot()
-        p.df = self.df
-        p.histogram_column_name = column_name
-        p.width = self.width
-        p.height = self.width
+        p = bokeh.plotting.figure(
+            width=self.width,
+            height=self.width,
+            sizing_mode="fixed",
+            x_range=x_range,
+            outline_line_color=None
+        )
+        p.xaxis.visible = False
+        p.xgrid.visible = False
+        p.yaxis.visible = False
 
-        p.labels = self.color_factors
-        p.label_id_column_name = self.color_id_column_name
-        p.label_to_color = self.colormap
+        phist = HistogramPlot(
+            source=self.app.cds,
+            field=column_name,
+            nbins=10,
+            factor_map=self.app.fmap_color,
+            figure=p
+        )
 
-        p.update()
-        
-        self.histogram_plots[column_name] = p
-        return None
-
-    def update_histogram(self, column_name):
-        """Updates the histogram plot for the specified column."""
-        if column_name not in self.histogram_plots:
-            self.create_histogram(column_name)
-        else:
-            p = self.histogram_plots[column_name]
-            p.df = self.df
-            p.histogram_column_name = column_name
-            p.labels = self.color_factors
-            p.label_id_column_name = self.color_id_column_name
-            p.label_to_color = self.colormap
-
-            p.selection = self.cds.selected.indices
-            p.update()
+        self.histogram_plots[column_name] = phist
         return None
 
     def create_scatter(self, column_name_x, column_name_y):
@@ -217,80 +213,107 @@ class SplomPlot(object):
         self.create_range(column_name_x)
         self.create_range(column_name_y)
 
-        # Create the scatter plot.
+        # Create the figure.
         p = bokeh.plotting.figure(
             width=self.width,
-            height=self.width, 
+            height=self.width,
+            sizing_mode="fixed",
             syncable=True,
-            # x_range=self.x_ranges[column_name_x], 
-            # y_range=self.y_ranges[column_name_y],
-            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover"
-        )
-        p.scatter(
-            x=column_name_x,
-            y=column_name_y, 
-            source=self.cds,
-            color=self.color_column_name,
-            marker=self.marker_column_name
+            x_range=self.x_ranges[column_name_x], 
+            y_range=self.y_ranges[column_name_y],
+            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover",
+            toolbar_location=None
         )
 
         p.xaxis.visible = False
         p.yaxis.visible = False
 
+        # Create the scatter plot.
+        pscatter = p.scatter(
+            x=column_name_x,
+            y=column_name_y, 
+            source=self.app.cds,
+            color="cora:color:glyph",
+            marker="cora:marker:glyph"
+        )
+
+        # Link the appearance settings.
+        pscatter.glyph.size = self.app.ui_slider_size.value
+        pscatter.glyph.fill_alpha = self.app.ui_slider_opacity.value
+        pscatter.glyph.line_alpha = self.app.ui_slider_opacity.value
+
+        self.app.ui_slider_size.js_link("value", pscatter.glyph, "size")
+        self.app.ui_slider_opacity.js_link("value", pscatter.glyph, "fill_alpha")
+        self.app.ui_slider_opacity.js_link("value", pscatter.glyph, "line_alpha")
+
+        # Done.
         self.scatter_plots[(column_name_x, column_name_y)] = p
         return None
 
-    def update_scatter(self, column_name_x, column_name_y):
-        """Updates the scatter plot for the given x axis and y axis."""
-        if (column_name_x, column_name_y) not in self.scatter_plots:
-            self.create_scatter(column_name_x, column_name_y)
-        return None
-
     def update_layout(self):
-        """Updates the grid layout."""
-        children = []
+        """Updates the grid layout.
+        
+        This usually happens after the user adds or removes a column from
+        the plot or directly after creating the SplomView.
+        """
+        column_names_x = self.ui_multichoice_columns.value
+        column_names_y = list(reversed(column_names_x))
+        ncolumns = len(column_names_x)
 
-        # first row with x-axes
-        row = []
-        for column_name in self.plot_column_names:
+        # Nothing to do.
+        if ncolumns == 0:
+            self.layout_panel.children = []
+            return None
+
+        # We create the SPLOM row wise. Using Bokeh's gridplot directly
+        # allocated too much space for the dummy x and
+        rows = []
+
+        # x axis
+        row = [None]
+
+        for column_name in column_names_x:
             self.create_axes_plots(column_name)
             p = self.x_axes_plots[column_name]
-            row.append(p)   
-        
-        row.append(None)
-        children.append(row)
+            row.append(p)
+
+        rows.append(row)
 
         # scatter plots + y axes
-        for icol, column_name_y in enumerate(self.plot_column_names):
+        for irow, column_name_y in enumerate(column_names_y):
             row = []
-
-            # scatter plots
-            for irow, column_name_x in enumerate(self.plot_column_names):
-                if icol == irow:
-                    self.create_histogram(column_name_x)
-                    p = self.histogram_plots[column_name_x]
-                    row.append(p.figure)
-                elif icol < irow:
-                    self.create_scatter(column_name_x, column_name_y)
-                    p = self.scatter_plots[(column_name_x, column_name_y)]
-                    row.append(p)
-                else:
-                    row.append(None)
 
             # y axis
             self.create_axes_plots(column_name_y)
             p = self.y_axes_plots[column_name_y]
             row.append(p)
 
-            children.append(row)
+            # scatter plots
+            for icol, column_name_x in enumerate(column_names_x):
+                if irow == ncolumns - icol - 1:
+                    self.create_histogram(column_name_x)
+                    p = self.histogram_plots[column_name_x]
+                    row.append(p.figure)
+                elif irow < ncolumns - icol:
+                    self.create_scatter(column_name_x, column_name_y)
+                    p = self.scatter_plots[(column_name_x, column_name_y)]
+                    row.append(p)
+                else:
+                    row.append(None)
+            rows.append(row)
 
-        # Update the layout.
-        # if self.layout:
-        #     self.layout.children = children
-        # else:
-        pprint(children)
-        self.layout = bokeh.layouts.gridplot(
-            children,
-            toolbar_location="right"
+        # Create the gridplot and update the layout.
+        gridplot = bokeh.layouts.gridplot(
+            children=rows, 
+            toolbar_location="above", 
+            merge_tools=True
         )
+        self.layout_panel.children = [
+            gridplot
+        ]
+        return None
+    
+    def on_multichoice_columns_change(self, attr, old, new):
+        """The user removed/added a column from/to the plot."""
+        self.update_layout()
         return None

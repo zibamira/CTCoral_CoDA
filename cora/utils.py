@@ -11,6 +11,7 @@ import itertools
 import bokeh
 import bokeh.models
 
+import blinker
 import pandas as pd
 import numpy as np
 from natsort import natsorted
@@ -142,6 +143,9 @@ class FactorMap(object):
         #: The additional data column mapping each label (factor) to its
         #: glyph.
         self.glyph_column: List[Any] = []
+
+        #: Emitted when the colormap is updated.
+        self.on_update = blinker.Signal()
         return None
 
     def update(self):
@@ -154,14 +158,14 @@ class FactorMap(object):
         # Use default values if the data frame has no column with the
         # given name.
         if self.column_name not in self.df:
-            self.factors = []
-            
-            self.id_map = {}
-            self.id_column = [0 for i in range(nrows)]
+            self.factors = ["None"]
 
             glyph = self.palette[0]
-            self.glyph_map = []
+            self.glyph_map = {"None": glyph}
             self.glyph_column = [glyph for i in range(nrows)]
+            
+            self.id_map = {"None": 0}
+            self.id_column = np.zeros(nrows)
             return None
 
         # Get all unique factors in the discrete label column and 
@@ -189,4 +193,7 @@ class FactorMap(object):
         data = self.cds.data
         data[f"{self.name}:glyph"] = self.glyph_column
         data[f"{self.name}:id"] = self.id_column
+
+        # Notify observers.
+        self.on_update.send()
         return None

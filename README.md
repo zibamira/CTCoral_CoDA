@@ -42,19 +42,24 @@ Please take a look at the [examples/](./examples) folder for examples. You shoul
 
 ## ToDo
 
-# Monday
+*   HistogramView
+    *   Create a dedicated histogram view for a single
+        data frame.
+*   ScatterView
+    *   Create a dedicated view for the scatter plot 
+        of 2 columns.
 
-*   Histogram
-    *   Create a *Histogram* plot which takes a figure
-        and adds the plot there, returning a reference to the internal 
-        data.
-    *   Create a *HistogramView* class that displays a single
-        histogram and also performs the data synhronization.
-*   Add the sidebar back to the layout.
-*   Add select menues for the SPLOM plot.
-*   Add prefix based groups for selecting the columns to display fast.
-*   Move the y-axes to the left and the histogram axes to the right\
-    and transpose the histogram.
+*   SimpleML
+    *   Create a view for the UMap settings
+    *   Create a view for the PCA settings
+*   MapView
+    *   Create a MapView which shows the "longitute" and "latitude" columns.
+
+*   CLIDataProvider
+    *   Create a general purpose data provider.
+    *   The provider takes a list of paths via the command line interface and watches their creation and modification.
+    *   The provider also takes the path to a numpy image containing the row indices. This mask is used to create a selection mask.
+    *   
 
 # Tuesday
 
@@ -99,10 +104,21 @@ Please take a look at the [examples/](./examples) folder for examples. You shoul
     and the first order coefficient (straightness) may be useful features.
 *   Center Line Tree
     Radius Lifting Tree Paper
+*   Using the Buddy-Angles, try to create an isomorphic as possible 2D
+    embedding of the coral framework.
     
 *   Other applications
     *   Jürgen could eventually use the PCA features for the element origin analysis
         he showed me a year ago. Let's ask him.
+
+## Nice To Have
+
+*   Legends\
+    Eventually add a legend for the color and marker factor maps. The rows in the 
+    spreadsheet view could also be colored accordingly.
+*   HistogramView\
+    Add classical boxplot features like whiskers, min max
+    and outlier views. Draw continous, kernel-density estimator based curves.
 
 ## Rationale
 

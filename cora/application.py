@@ -33,7 +33,7 @@ def init_logging():
 
     logging.basicConfig(handlers=[console], level=logging.INFO)
     return None
-    
+
 
 class Application(object):
     """The application object contains the relevant dataframes
@@ -78,14 +78,31 @@ class Application(object):
         # -- Glyph mapping --
 
         #: The vertex color map.
-        self.fmap_color: FactorMap = None
+        self.fmap_color = FactorMap(
+            name="cora:color",
+            df=self.df,
+            cds=self.cds,
+            column_name=None,
+            palette=["blue", "green", "yellow", "red", "black", "grey"]
+        )
 
         #: The vertex glyph map.
-        self.fmap_marker: FactorMap = None
+        self.fmap_marker = FactorMap(
+            name="cora:marker",
+            df=self.df,
+            cds=self.cds,
+            column_name=None,
+            palette=["asterisk", "circle", "cross", "diamond"]
+        )
 
         #: The edge color map.
-        self.fmap_color_edges: FactorMap = None
-
+        self.fmap_color_edges = FactorMap(
+            name="cora:edge:color",
+            df=self.df,
+            cds=self.cds,
+            column_name=None,
+            palette=["black", "grey", "blue", "green", "yellow", "red"]
+        )
 
         # -- UI controls input --
 
@@ -144,8 +161,8 @@ class Application(object):
         #: Menu for selecting the view in the left panel.
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
-            options=["None", "Vertex Table", "Graph", "Flower"],
-            value="Graph", 
+            options=["None", "SPLOM", "Spreadsheet", "Graph", "Flower"],
+            value="SPLOM", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -155,7 +172,7 @@ class Application(object):
         #: Menu for selecting the view in the right panel.
         self.ui_select_panel_right = bokeh.models.Select(
             title="Plot Type",
-            options=["None", "Vertex Table", "Graph", "Flower"],
+            options=["None", "SPLOM", "Spreadsheet", "Graph", "Flower"],
             value="None", 
             sizing_mode="stretch_width"
         )
@@ -218,50 +235,30 @@ class Application(object):
     
     def update_colormap(self):
         """Updates the color column in the column data source."""
-        palette = ["blue", "green", "yellow", "red", "black", "grey"]
-
-        fmap = FactorMap(
-            name="cora:color", 
-            df=self.df, 
-            cds=self.cds, 
-            column_name=self.ui_select_color.value, 
-            palette=palette
-        )
+        fmap = self.fmap_color
+        fmap.df = self.df
+        fmap.cds = self.cds
+        fmap.column_name = self.ui_select_color.value
         fmap.update_cds()
-
-        self.fmap_color = fmap
         return None
     
     def update_markermap(self):
         """Updates the marker column in the column data source."""
-        palette = ["asterisk", "circle", "cross", "diamond"]
-
-        fmap = FactorMap(
-            name="cora:marker", 
-            df=self.df, 
-            cds=self.cds, 
-            column_name=self.ui_select_marker.value, 
-            palette=palette
-        )
+        fmap = self.fmap_marker
+        fmap.df = self.df
+        fmap.cds = self.cds
+        fmap.column_name = self.ui_select_marker.value
         fmap.update_cds()
-
-        self.fmap_color = fmap
         return None
 
     def update_edge_colormap(self):
         """Updates the colormap for the edges in the graph view."""
-        palette = ["blue", "green", "yellow", "red", "black", "grey"]
-
-        fmap = FactorMap(
-            name="cora:edge:color", 
-            df=self.df_edges, 
-            cds=self.cds_edges, 
-            column_name=self.ui_select_color_edges.value, 
-            palette=palette
-        )
+        
+        fmap = self.fmap_color_edges
+        fmap.df = self.df
+        fmap.cds = self.cds
+        fmap.column_name = self.ui_select_color_edges.value
         fmap.update_cds()
-
-        self.fmap_color_edges = fmap
         return None        
     
 
@@ -311,7 +308,11 @@ class Application(object):
         and returns it. The view is not yet attached to the 
         application.
         """
-        if view_type == "Vertex Table":
+        if view_type == "SPLOM":
+            from cora.view.splom import SplomView
+            return SplomView(self)
+        
+        if view_type == "Spreadsheet":
             from cora.view.table import TableView
             return TableView(self)
         

@@ -10,3 +10,4 @@ agraph
 umap-learn
 pydot
 natsort
+blinker

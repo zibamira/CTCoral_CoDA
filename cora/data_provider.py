@@ -97,7 +97,7 @@ class RandomDataProvider(DataProvider):
             "input:col E": np.random.random(nsamples),
             "input:col F": np.random.random(nsamples),
             "input:label A": np.random.choice(["A1", "A2"], size=nsamples),
-            "input:label B": np.random.choice(["B1", "B2"], size=nsamples)
+            "input:label B": np.random.choice(["B1", "B2", "B3"], size=nsamples)
         })
 
         # graph (and thus edge) data
@@ -111,7 +111,7 @@ class RandomDataProvider(DataProvider):
         self.df_edges = df_edges
         self.notify_change()
         return None
-    
+
 
 if amira is not None:
 
