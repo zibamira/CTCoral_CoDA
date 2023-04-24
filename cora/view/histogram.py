@@ -20,11 +20,14 @@ from natsort import natsorted
 import pandas as pd
 import numpy as np
 
-from cora.utils import FactorMap
+from cora.application import Application
+from cora.utils import FactorMap, scalar_columns
+from cora.view.base import ViewBase
 
 
 __all__ = [
-    "HistogramPlot"
+    "HistogramPlot",
+    "HistogramView"
 ]
 
 
@@ -313,4 +316,48 @@ class HistogramPlot(object):
     def on_factor_map_update(self, sender=None):
         """Called when the user changed the factor map."""
         self.update()
+        return None
+
+
+class HistogramView(ViewBase):
+    """A view panel displaying a single histogram plot."""
+
+    def __init__(self, app: Application):
+        super().__init__(app)
+
+        # -- sidebar --
+
+        columns = scalar_columns(self.app.df)
+
+        self.ui_select_column = bokeh.models.Select(
+            title="Column", options=columns, value=columns[0]
+        )
+
+        self.layout_sidebar.children = [
+            self.ui_select_column
+        ]
+
+        # -- panel --
+
+        p = bokeh.plotting.figure(
+            title="Histogram",
+            sizing_mode="stretch_both",
+            tools="reset,hover",
+            toolbar_location="above"
+        )
+        p.xaxis.visible = False
+        p.xgrid.visible = False
+        
+        phist = HistogramPlot(
+            source=self.app.cds,
+            field=self.ui_select_column.value,
+            nbins=10,
+            factor_map=self.app.fmap_color,
+            figure=p
+        )
+
+        self.figure = p
+        self.phist = phist
+
+        self.layout_panel.children = [self.figure]
         return None
