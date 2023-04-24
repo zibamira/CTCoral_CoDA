@@ -22,59 +22,27 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 
 ## Visualization
 
-*   TableView\
-    This view shows the raw data columns.
-*   FlowerView\
-    This view shows a flower (start) plot of 
-    the aggregated selected data.
+*   Spreadsheet
+*   Histogram
+*   Scatter
+*   SPLOM
+*   Graph
+*   Map
 
+## ToDo 
 
-*   Scatter Plots\
-    The user can select and configure a scatter plot with all features.
-*   Dimensionality Reduction\
-    A UMAP dimension reduction is perfomed when one of the inputs change
-    and updated automatic in the frontend. The features are visualized in 
-    a scatter plot. 
-
-## Usage
-
-Please take a look at the [examples/](./examples) folder for examples. You should already be familiar with NumPy.
-
-## ToDo
-
-*   HistogramView
-    *   Create a dedicated histogram view for a single
-        data frame.
 *   ScatterView
     *   Create a dedicated view for the scatter plot 
         of 2 columns.
-
+*   MapView
+    *   Create a MapView which shows the "longitute" and "latitude" columns.
 *   SimpleML
     *   Create a view for the UMap settings
     *   Create a view for the PCA settings
-*   MapView
-    *   Create a MapView which shows the "longitute" and "latitude" columns.
-
 *   CLIDataProvider
     *   Create a general purpose data provider.
     *   The provider takes a list of paths via the command line interface and watches their creation and modification.
     *   The provider also takes the path to a numpy image containing the row indices. This mask is used to create a selection mask.
-    *   
-
-# Tuesday
-
-*   Create the UMAP UI and widget.
-    *   Feature selection
-    *   UMap parameters
-*   Visualize the location in a map view.
-    *   Add a location column to the vertex data provider
-    *   Add a map view.
-
-# Wednesday
-
-*   Use new attributes in the application class "image_vertices" and "image_edges"
-    *   I don't know why I wrote this todo point. Probably for thumbnails
-        of the vertices and edges
 
 # Thursday
 
@@ -85,10 +53,6 @@ Please take a look at the [examples/](./examples) folder for examples. You shoul
     *   create a new tool for seeking the instance in Amira, take a look at https://docs.bokeh.org/en/2.4.1/docs/user_guide/extensions_gallery/tool.html
 
 # Future
-
-*   Clean up UI
-    *   clean up controls in code
-    *   add group filters/prefix filters in select menus
 
 *   Compute the orientation of the edges and a likelihood for the correct
     orientation. This code could be part of the Amira data provider.
@@ -102,6 +66,8 @@ Please take a look at the [examples/](./examples) folder for examples. You shoul
 *   Approximate the medial line by a quadratic curve (parabola) fitted
     to the point cloud of a polyp. The second order coefficient (curvature)
     and the first order coefficient (straightness) may be useful features.
+*   Update the Amira IPC interface to support ROI selection and use only the watchdog interface and simple spreadsheet/numpy file types.
+
 *   Center Line Tree
     Radius Lifting Tree Paper
 *   Using the Buddy-Angles, try to create an isomorphic as possible 2D
@@ -119,6 +85,8 @@ Please take a look at the [examples/](./examples) folder for examples. You shoul
 *   HistogramView\
     Add classical boxplot features like whiskers, min max
     and outlier views. Draw continous, kernel-density estimator based curves.
+*   ImageView and Thumbnails\
+    Add a column to the data frame with the paths to images for each sample. The ImageView shows a grid with the thumbnails of the current selection and the thumbnails may also be attached to the hover tool.
 
 ## Rationale
 

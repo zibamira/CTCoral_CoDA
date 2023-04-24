@@ -161,8 +161,8 @@ class Application(object):
         #: Menu for selecting the view in the left panel.
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
-            options=["None", "SPLOM", "Spreadsheet", "Graph", "Flower", "Histogram"],
-            value="SPLOM", 
+            options=["None", "SPLOM", "Spreadsheet", "Graph", "Flower", "Histogram", "Scatter"],
+            value="Scatter", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -172,8 +172,8 @@ class Application(object):
         #: Menu for selecting the view in the right panel.
         self.ui_select_panel_right = bokeh.models.Select(
             title="Plot Type",
-            options=["None", "SPLOM", "Spreadsheet", "Graph", "Flower", "Histogram"],
-            value="None", 
+            options=["None", "SPLOM", "Spreadsheet", "Graph", "Flower", "Histogram", "Scatter"],
+            value="Histogram", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_right.on_change(
@@ -327,6 +327,10 @@ class Application(object):
         if view_type == "Histogram":
             from cora.view.histogram import HistogramView
             return HistogramView(self)
+
+        if view_type == "Scatter":
+            from cora.view.scatter import ScatterView
+            return ScatterView(self)
         return None
 
     # -- UI signals --
