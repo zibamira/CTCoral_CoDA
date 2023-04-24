@@ -98,8 +98,8 @@ class Application(object):
         #: The edge color map.
         self.fmap_color_edges = FactorMap(
             name="cora:edge:color",
-            df=self.df,
-            cds=self.cds,
+            df=self.df_edges,
+            cds=self.cds_edges,
             column_name=None,
             palette=["black", "grey", "blue", "green", "yellow", "red"]
         )
@@ -255,8 +255,8 @@ class Application(object):
         """Updates the colormap for the edges in the graph view."""
         
         fmap = self.fmap_color_edges
-        fmap.df = self.df
-        fmap.cds = self.cds
+        fmap.df = self.df_edges
+        fmap.cds = self.cds_edges
         fmap.column_name = self.ui_select_color_edges.value
         fmap.update_cds()
         return None        
