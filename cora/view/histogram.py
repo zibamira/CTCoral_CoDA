@@ -323,41 +323,57 @@ class HistogramView(ViewBase):
     """A view panel displaying a single histogram plot."""
 
     def __init__(self, app: Application):
+        """ """
         super().__init__(app)
 
-        # -- sidebar --
-
+        # Filter out columns that are not supported.
         columns = scalar_columns(self.app.df)
 
+        #: UI widget for choosing the data column.
         self.ui_select_column = bokeh.models.Select(
-            title="Column", options=columns, value=columns[0]
+            title="Column", 
+            sizing_mode="stretch_width",
+            options=columns, 
+            value=columns[0]
+        )
+        self.ui_select_column.on_change(
+            "value", self.on_ui_select_column_change
         )
 
+        # Sidebar layout.
         self.layout_sidebar.children = [
             self.ui_select_column
         ]
 
-        # -- panel --
+        # Create the figure.
+        self.update()
+        return None
 
-        p = bokeh.plotting.figure(
+    def update(self):
+        """Creates the figure showing the histogram and replaces
+        the current plot.
+        """
+        pfigure = bokeh.plotting.figure(
             title="Histogram",
             sizing_mode="stretch_both",
             tools="reset,hover",
-            toolbar_location="above"
+            toolbar_location="above",
+            y_axis_label="Count",
+            x_axis_label=self.ui_select_column.value
         )
-        p.xaxis.visible = False
-        p.xgrid.visible = False
+        pfigure.xgrid.visible = False
         
         phist = HistogramPlot(
             source=self.app.cds,
             field=self.ui_select_column.value,
             nbins=10,
             factor_map=self.app.fmap_color,
-            figure=p
+            figure=pfigure
         )
 
-        self.figure = p
-        self.phist = phist
-
-        self.layout_panel.children = [self.figure]
+        self.layout_panel.children = [pfigure]
+        return None
+    
+    def on_ui_select_column_change(self, attr, old, new):
+        self.update()
         return None
