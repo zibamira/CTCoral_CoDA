@@ -71,8 +71,10 @@ class ScatterView(ViewBase):
             tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover",
             toolbar_location="above",
             tooltips=[
-                ("index", "$index")
-            ]
+                ("index", "$index"),
+                ("x", "$x"),
+                ("y", "$y")
+            ],
             x_axis_label=colx,
             y_axis_label=coly
         )
