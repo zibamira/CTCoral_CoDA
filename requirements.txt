@@ -11,3 +11,4 @@ umap-learn
 pydot
 natsort
 blinker
+xyzservices

@@ -62,18 +62,21 @@ class ScatterView(ViewBase):
 
     def update(self):
         """Creates the scatter plot and replaces the current figure."""
+        colx = self.ui_select_column_x.value
+        coly = self.ui_select_column_y.value
+
         pfigure = bokeh.plotting.figure(
             title="Scatter",
             sizing_mode="stretch_both",
             tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover",
             toolbar_location="above",
-            x_axis_label=self.ui_select_column_x.value,
-            y_axis_label=self.ui_select_column_y.value
+            x_axis_label=colx,
+            y_axis_label=coly
         )
 
         pscatter = pfigure.scatter(
-            x=self.ui_select_column_x.value,
-            y=self.ui_select_column_y.value,
+            x=colx, 
+            y=coly,
             source=self.app.cds,
             color="cora:color:glyph",
             marker="cora:marker:glyph",

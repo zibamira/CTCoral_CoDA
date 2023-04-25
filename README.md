@@ -31,11 +31,6 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 
 ## ToDo 
 
-*   ScatterView
-    *   Create a dedicated view for the scatter plot 
-        of 2 columns.
-*   MapView
-    *   Create a MapView which shows the "longitute" and "latitude" columns.
 *   SimpleML
     *   Create a view for the UMap settings
     *   Create a view for the PCA settings

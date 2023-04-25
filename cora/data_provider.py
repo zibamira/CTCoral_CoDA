@@ -87,8 +87,14 @@ class RandomDataProvider(DataProvider):
 
     def reload(self):
         """Generates new random data."""
-        # vertex data
         nsamples = 100
+
+        # location data
+        # randomly distributed around a nice, local Berlin bakery
+        latitude = 52.5211544 + np.random.normal(0.0, scale=0.004, size=nsamples)
+        longitude = 13.3469807 + np.random.normal(0.0, scale=0.008, size=nsamples)
+
+        # vertex data
         df = pd.DataFrame.from_dict({
             "input:col A": np.random.random(nsamples),
             "input:col B": np.random.standard_normal(nsamples),
@@ -97,7 +103,9 @@ class RandomDataProvider(DataProvider):
             "input:col E": np.random.random(nsamples),
             "input:col F": np.random.random(nsamples),
             "input:label A": np.random.choice(["A1", "A2"], size=nsamples),
-            "input:label B": np.random.choice(["B1", "B2", "B3"], size=nsamples)
+            "input:label B": np.random.choice(["B1", "B2", "B3"], size=nsamples),
+            "input:latitude": latitude,
+            "input:longitude": longitude
         })
 
         # graph (and thus edge) data
