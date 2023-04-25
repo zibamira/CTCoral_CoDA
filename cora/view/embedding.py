@@ -16,6 +16,8 @@ is done via other panels, e.g. a SPLOM in the left frame.
 """
 
 from collections import OrderedDict
+import itertools
+from pprint import pprint
 from typing import List, Literal
 
 import bokeh
@@ -50,6 +52,9 @@ class PCAView(ViewBase):
     The components are stored in the data column prefixed by
 
     *   `pca:component:*`.
+
+    The PCAView also visualizes the explained variance in a horizontal,
+    stacked bar chart.
     """
 
     def __init__(self, app: Application):
@@ -62,28 +67,25 @@ class PCAView(ViewBase):
         self.ui_multichoice_columns = bokeh.models.MultiChoice(
             title="Columns",
             options=columns,
-            value=columns
+            value=columns,
+            sizing_mode="stretch_width"
         )
         self.ui_multichoice_columns.on_change(
             "value", self.on_ui_multichoice_columns_change
         )
-        
-        #: UI for selecting the number of components that are of interest.
-        self.ui_spinner_ncomponents = bokeh.models.Spinner(
-            title="Number of Components",
-            value=4,
-            low=1,
-            high=len(columns),
-            step=1
-        )
-        self.ui_spinner_ncomponents.on_change(
-            "value", self.on_ui_spinner_ncomponents_change
-        )
+
+        #: Data source showing the explained variance.
+        self.cds_variance = bokeh.models.ColumnDataSource()
+        self.figure_variance = None
+
+        # Compute the PCA.
+        self.create_variance_figure()
+        self.compute()
 
         # Panel layout.
         self.layout_panel.children = [
             self.ui_multichoice_columns,
-            self.ui_spinner_ncomponents
+            self.figure_variance
         ]
         return None
 
@@ -93,26 +95,76 @@ class PCAView(ViewBase):
         columns = self.ui_multichoice_columns.value
         values = self.app.df[columns]
 
-        ncomponents = self.ui_spinner_ncomponents.value
-        ncomponents = max(1, ncomponents)
-
         reducer = sklearn.decomposition.PCA()
         components = reducer.fit_transform(values)
 
         # Update the dataframe.
-        for i in range(ncomponents):
+        for i in range(len(columns)):
             self.app.df[f"pca:feature:{i}"] = components[:, i]
 
         # Update the Bokeh data source.
-        for i in range(ncomponents):
+        for i in range(len(columns)):
             self.app.cds.data[f"pca:feature:{i}"] = components[:, i]
+
+        # Update the variance plot.
+        self.update_variance_cds(reducer.explained_variance_ratio_)
+        return None
+    
+    def create_variance_figure(self):
+        """Creates the figure and data source displaying the
+        variance explained by each component of the PCA.
+        """
+        p = bokeh.plotting.figure(
+            height=80,
+            sizing_mode="stretch_width",
+            title="Explained Variance",
+            tooltips=[
+                ("component", "@component"),
+                ("variance", "@variance{%0.2f}"),
+                ("total variance", "@right{%0.2f}")
+            ],
+            x_range=(0.0, 1.0),
+            y_range=(0.0, 1.0),
+            toolbar_location=None
+        )        
+        p.xaxis.visible = False
+        p.xgrid.visible = False
+
+        p.yaxis.visible = False
+        p.ygrid.visible = False
+
+        p.quad(
+            line_color="white",
+            fill_color="fill_color",
+            source=self.cds_variance,
+        )
+
+        self.figure_variance = p
+        return None
+    
+    def update_variance_cds(self, variance: np.array):
+        """Updates the data source showing the explained variance."""
+        ncolumns = variance.size
+
+        right = np.cumsum(variance)
+        left = np.concatenate(([0.0], right[:-1]))
+        palette = bokeh.palettes.plasma(ncolumns)
+
+        # Update the column data source.
+        data = {
+            "left": left,
+            "right": right,
+            "bottom": np.full_like(left, 0.0),
+            "top": np.full_like(left, 1.0),
+            "component": [f"component {i}" for i in range(ncolumns)],
+            "variance": variance,
+            "fill_color": palette
+        }
+        self.cds_variance.data = data
         return None
     
     def on_ui_multichoice_columns_change(self, attr, old, new):
-        self.compute()
-        return None
-
-    def on_ui_spinner_ncomponents_change(self, attr, old, new):
+        """The user changed the columns to consider for the PCA."""
         self.compute()
         return None
     
@@ -132,7 +184,8 @@ class UMAPView(ViewBase):
         self.ui_columns = bokeh.models.MultiChoice(
             title="Columns",
             options=columns,
-            value=columns
+            value=columns,
+            sizing_mode="stretch_width"
         )
 
         #: UI for selecting the number of neighbours to consider.
@@ -141,7 +194,8 @@ class UMAPView(ViewBase):
             value=15,
             low=2,
             high=100,
-            step=1
+            step=1,
+            sizing_mode="stretch_width"
         )
         
         #: UI for selecting the dimensionality of the embedding.
@@ -150,7 +204,8 @@ class UMAPView(ViewBase):
             value=2,
             low=2,
             high=4,
-            step=1
+            step=1,
+            sizing_mode="stretch_width"
         )
 
         #: UI for selecting the minimal distance between embedded points.
@@ -159,7 +214,8 @@ class UMAPView(ViewBase):
             value=0.01,
             start=0.0,
             end=1.0,
-            step=0.01
+            step=0.01,
+            sizing_mode="stretch_width"
         )
 
         #: UI for selecting the effective scale of embedded points.
@@ -168,7 +224,8 @@ class UMAPView(ViewBase):
             value=1.0,
             start=0.0,
             end=10.0,
-            step=0.01
+            step=0.01,
+            sizing_mode="stretch_width"
         )
 
         #: UI for starting the UMap computation.
@@ -243,7 +300,8 @@ class MLView(ViewBase):
         self.ui_method = bokeh.models.Select(
             title="Method",
             options=list(natsorted(self.ML_METHODS.keys())),
-            value="PCA"
+            value="PCA",
+            sizing_mode="stretch_width"
         )
         self.ui_method.on_change("value", self.on_ui_method_change)
 

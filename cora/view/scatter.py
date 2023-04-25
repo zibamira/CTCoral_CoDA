@@ -70,6 +70,9 @@ class ScatterView(ViewBase):
             sizing_mode="stretch_both",
             tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover",
             toolbar_location="above",
+            tooltips=[
+                ("index", "$index")
+            ]
             x_axis_label=colx,
             y_axis_label=coly
         )
