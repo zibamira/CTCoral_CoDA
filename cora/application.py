@@ -166,14 +166,15 @@ class Application(object):
             "Flower",
             "Histogram",
             "Scatter",
-            "Map"
+            "Map",
+            "Embedding"
         ]
 
         #: Menu for selecting the view in the left panel.
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="Map", 
+            value="Embedding", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -346,6 +347,10 @@ class Application(object):
         if view_type == "Map":
             from cora.view.map import MapView
             return MapView(self)
+        
+        if view_type == "Embedding":
+            from cora.view.embedding import MLView
+            return MLView(self)
         return None
 
     # -- UI signals --
