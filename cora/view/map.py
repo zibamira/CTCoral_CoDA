@@ -96,7 +96,7 @@ class MapView(ViewBase):
         """Creates the scatter plot and replaces the current figure."""
         # Obtain the ranges for the Mercator projection.
         x_max, _ = latlong_to_mercator(0.0, 180.0)
-        y_max, _ = latlong_to_mercator(90.0, 0.0)
+        _, y_max = latlong_to_mercator(90.0, 0.0)
         
         pfigure = bokeh.plotting.figure(
             title="Map",
@@ -105,10 +105,8 @@ class MapView(ViewBase):
             toolbar_location="above",
             x_axis_type="mercator",
             x_axis_label="Longitude",
-            x_range=(-x_max, x_max),
             y_axis_type="mercator",
             y_axis_label="Latitude",
-            y_range=(-y_max, y_max)
         )
 
         pfigure.add_tile(

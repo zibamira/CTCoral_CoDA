@@ -92,7 +92,7 @@ class Application(object):
             df=self.df,
             cds=self.cds,
             column_name=None,
-            palette=["asterisk", "circle", "cross", "diamond"]
+            palette=["circle", "cross", "diamond", "asterisk"]
         )
 
         #: The edge color map.
