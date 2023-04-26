@@ -12,3 +12,4 @@ pydot
 natsort
 blinker
 xyzservices
+watchdog
