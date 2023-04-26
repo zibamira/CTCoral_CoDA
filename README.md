@@ -28,24 +28,8 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 *   SPLOM
 *   Graph
 *   Map
-
-## ToDo 
-
-*   SimpleML
-    *   Create a view for the UMap settings
-    *   Create a view for the PCA settings
-*   CLIDataProvider
-    *   Create a general purpose data provider.
-    *   The provider takes a list of paths via the command line interface and watches their creation and modification.
-    *   The provider also takes the path to a numpy image containing the row indices. This mask is used to create a selection mask.
-
-# Thursday
-
-*   AMIRA data provider
-    *   new class "data provider" which sets up the project
-    *   encapsulates the reload button, has a dirty flag
-    *   selection mask synchronization
-    *   create a new tool for seeking the instance in Amira, take a look at https://docs.bokeh.org/en/2.4.1/docs/user_guide/extensions_gallery/tool.html
+*   Embedding
+*   Flower
 
 # Future
 
@@ -62,6 +46,8 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
     to the point cloud of a polyp. The second order coefficient (curvature)
     and the first order coefficient (straightness) may be useful features.
 *   Update the Amira IPC interface to support ROI selection and use only the watchdog interface and simple spreadsheet/numpy file types.
+*   Alternatively to the ROI seeking tool: Create an Amira module which
+    adjusts the ROI automatic based on a given label field.
 
 *   Center Line Tree
     Radius Lifting Tree Paper
@@ -82,6 +68,8 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
     and outlier views. 
 *   ImageView and Thumbnails\
     Add a column to the data frame with the paths to images for each sample. The ImageView shows a grid with the thumbnails of the current selection and the thumbnails may also be attached to the hover tool.
+*   3D Point Clouds\
+    This could help to identify clusters in 3D, not relying only on 2D scatter plots.
 
 ## Rationale
 

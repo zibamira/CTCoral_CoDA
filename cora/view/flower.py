@@ -8,6 +8,7 @@ curve, which both are more beautiful.
 """
 
 import functools
+import itertools
 from typing import Dict, List, Any, Literal
 
 import bokeh
@@ -163,7 +164,9 @@ class FlowerPlot(object):
         radius = (mean_selection - min_total)/(max_total - min_total)
         start_angle = angles - delta/2.0
         end_angle = angles + delta/2.0
-        color = bokeh.palettes.all_palettes["Spectral"][ncolumns]
+
+        palette = bokeh.palettes.Spectral10
+        color = [color for _, color in zip(range(ncolumns), itertools.cycle(palette))]
 
         # Update the column data source.
         self.cds_data.update({
@@ -173,7 +176,7 @@ class FlowerPlot(object):
             "fill_color": color,
             "column": self.df.columns,
             "mean": mean_selection,
-            "color": bokeh.palettes.all_palettes["Spectral"][ncolumns],
+            "color": color
         })
 
         # Also update the label positions.

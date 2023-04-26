@@ -30,6 +30,9 @@ class DataProvider(object):
 
     def __init__(self):
         """ """
+        super().__init__()
+        
+        print("INIT PROVIDER", self)
         #: The data frame with the vertex data.
         self.df = pd.DataFrame()
 

@@ -127,11 +127,14 @@ class PCAView(ViewBase):
             y_range=(0.0, 1.0),
             toolbar_location=None
         )        
-        p.xaxis.visible = False
+        p.xaxis.visible = True
         p.xgrid.visible = False
 
         p.yaxis.visible = False
         p.ygrid.visible = False
+
+        p.xaxis.formatter = bokeh.models.NumeralTickFormatter(format="0 %")
+        p.xaxis.minor_tick_line_color = None
 
         p.quad(
             line_color="white",
