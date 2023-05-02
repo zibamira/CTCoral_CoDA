@@ -60,14 +60,13 @@ class PCAView(ViewBase):
     def __init__(self, app: Application):
         super().__init__(app)
 
-        columns = scalar_columns(self.app.df)
+        columns = scalar_columns(self.app.df, allow_nan=False)
 
         #: UI for selecting the columns that should be used in the PCA
         #: reduction.
         self.ui_multichoice_columns = bokeh.models.MultiChoice(
             title="Columns",
             options=columns,
-            value=columns,
             sizing_mode="stretch_width"
         )
         self.ui_multichoice_columns.on_change(
@@ -94,6 +93,13 @@ class PCAView(ViewBase):
         # Compute the PCA.
         columns = self.ui_multichoice_columns.value
         values = self.app.df[columns]
+
+        # Break if no column is selected or at least
+        # one column contains a Nan value.
+        if not columns:
+            return None
+        if pd.isnull(values).any().any():
+            return None
 
         reducer = sklearn.decomposition.PCA()
         components = reducer.fit_transform(values)

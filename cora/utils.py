@@ -5,8 +5,8 @@ This module contains some utilities and helper functions which did not
 belong some where else specifically.
 """
 
-from typing import List, Any, Dict
 import itertools
+from typing import Iterator, List, Any, Dict
 
 import bokeh
 import bokeh.models
@@ -31,9 +31,12 @@ def data_columns(df):
     return [name for name in df.columns if not name.startswith("cora:")]
 
 
-def scalar_columns(df):
+def scalar_columns(df, allow_nan=True):
     """Returns all columns with scalar values."""
-    return [name for name in data_columns(df) if pd.api.types.is_numeric_dtype(df[name].dtype)]
+    columns = [name for name in data_columns(df) if pd.api.types.is_numeric_dtype(df[name].dtype)]
+    if not allow_nan:
+        columns = [name for name in data_columns(df) if not df[name].isnull().any()]
+    return columns
 
 
 def categorical_columns(df):
@@ -117,7 +120,6 @@ class FactorMap(object):
         #: glyph in this list.
         self.palette: List[Any] = palette
 
-
         #: The sorted list with all unique labels (factors).
         #:
         #:      factor -> id
@@ -175,7 +177,7 @@ class FactorMap(object):
         self.factors = factors
         
         # Create the glyph mapping.
-        palette = itertools.cycle(self.palette)
+        palette = itertools.chain(self.palette, itertools.repeat(self.palette[-1]))
         self.glyph_map = {factor: glyph for factor, glyph in zip(factors, palette)}
         self.glyph_column = [self.glyph_map[factor] for factor in self.df[self.column_name]]
 

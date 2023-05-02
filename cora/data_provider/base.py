@@ -10,6 +10,7 @@ and aggregate them.
 import pathlib
 from typing import Callable
 
+import blinker
 import pandas as pd
 import numpy as np
 
@@ -32,7 +33,6 @@ class DataProvider(object):
         """ """
         super().__init__()
         
-        print("INIT PROVIDER", self)
         #: The data frame with the vertex data.
         self.df = pd.DataFrame()
 
@@ -48,7 +48,11 @@ class DataProvider(object):
         #: in the edge dataframe.
         self.label_field_edges = np.empty(0)
 
-        self._on_change: Callable[[], None] = None
+        #: This signal is emitted when a resource changed. The emitter
+        #: may be called from a different thread.
+        #:
+        #: :seealso: meth:~cora.application.Application.on_data_provider_change`
+        self.on_change = blinker.Signal()
         return None
 
     def reload(self):
@@ -61,13 +65,5 @@ class DataProvider(object):
 
     def notify_change(self):
         """Notifies Cora that the data changed and needs to be reloaded."""
-        if self._on_change:
-            self._on_change()
-        return None
-    
-    def on_change(self, f: Callable[[], None]):
-        """Registers a callback for when the data was modified
-        and a reload is needed.
-        """
-        self._on_change = f
+        self.on_change.send(self)
         return None

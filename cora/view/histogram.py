@@ -188,7 +188,7 @@ class HistogramPlot(object):
             bottom = top
             hist = hist2d[:, ifactor]
             top = bottom + hist
-            color = self.factor_map.palette[ifactor]
+            color = self.factor_map.glyph_map[factor]
             ratio = np.where(hist_all > 0, hist/hist_all, 0.0)
 
             data["left"].extend(left)
@@ -230,7 +230,7 @@ class HistogramPlot(object):
             hist = hist2d[:, ifactor]
             top = bottom
             bottom = top - hist
-            color = self.factor_map.palette[ifactor]
+            color = self.factor_map.glyph_map[factor]
             ratio = np.where(hist_all > 0, hist/hist_all, 0.0)
 
             data["left"].extend(left)

@@ -9,16 +9,20 @@
 
 This Python package implements *Cora - The Coral Explorer* application. An interactive link-and-brush tool with a real-time interface to Amira. It allows a fast visualization and exploration of cold-water corals, but doubles down as a general non-application specific explorative analysis tool.
 
-## Input
+## Usage
 
-*   Polyp Instance Segmentation\
-    *HxUniformLabelField3*
-*   Polyp Label Field Anlysis + Other Features\
-    *HxSpreadSheet*
-*   Label Field indicating if a Polyp is segmented correct or not. This field is used to guide the dimensionality reduction and give the user a visual feedback about clusters with wrong segmentations. \
-    *HxUniformLabelField3*
-*   Coral Framework
-    *HxSpatialGraph*
+You just need a bunch of spreadsheets and otionally, some label fields. Cora distinguishes between two types of data:
+
+*   **Vertex Data**\
+    This data is given for each sample of your data. Usually, it is just a row in a spreadsheet.
+*   **Edge Data**\
+    This data links two vertices and contains features describing the relationship between the vertices. The resulting graph structure can be visualized in Cora.
+
+You can pass the spreadsheets as command line arguments and launch the browser directly:
+```property
+$ python3 run.py --vertex label_analysis.csv --edge adjacency_graph.csv --vertex-field label_field.npy --start-browser
+```
+Cora will attempt to reload the dataframes every time a modification occurs.
 
 ## Visualization
 
@@ -31,29 +35,49 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
 *   Embedding
 *   Flower
 
+## Amira
+
+Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy `.npy` files. Use the following modules to store the output:
+
+*   HxSpreadsheet\
+    Export the spreadsheet as CSV file.
+*   HxUniformScalarField3, HxRegularScalarField3\
+    Export the field as `.npy` file.
+*   HxSpatialGraph\
+    Convert the spatial graph to a spreadsheet with the *HxSpatialGraphToSpreadSgeet* and store the three tables as CSV file. 
+    The `*_table` spreadsheet contains the edge information, the `*_node` spreadsheet contains additional vertex attributes and the `*_geometry` spreadsheet contains the 3D points on each edge. This spreadsheet is not relevant in Cora.
+
 # Future
 
-*   Compute the orientation of the edges and a likelihood for the correct
-    orientation. This code could be part of the Amira data provider.
-*   Compute more graph attributes in the Amira data provider, e.g.
-    the connected component.
-*   Compute the budding angle. In the most simple case, consider the medial
-    lines of the corals to be straight lines. Compute the inplane angle
-    between both lines as budding angle. A more sophisticated approach 
-    would use the tangential vectors of the quadratic polyp medial line
-    approximation below.
-*   Approximate the medial line by a quadratic curve (parabola) fitted
-    to the point cloud of a polyp. The second order coefficient (curvature)
-    and the first order coefficient (straightness) may be useful features.
-*   Update the Amira IPC interface to support ROI selection and use only the watchdog interface and simple spreadsheet/numpy file types.
-*   Alternatively to the ROI seeking tool: Create an Amira module which
-    adjusts the ROI automatic based on a given label field.
+*   Finalize the filesystem data provider
+    *   Make it work
+    *   Make the watchdog work
+    *   Implement the selection mask output
+*   Finalize the watchdog interface in Amira
+    *   Make sure the reload works
+    *   Use dummy objects to delay the first read
+*   Check if the synchronization works
 
-*   Center Line Tree
-    Radius Lifting Tree Paper
-*   Using the Buddy-Angles, try to create an isomorphic as possible 2D
-    embedding of the coral framework.
+*   Fix the segmentation fault in the SaM shortest path computation
+
+*   Fit a parabola curve to the coral points clouds
+    *   Implement a plane fit first
+    *   Refine the rotation and curve parameters with a Gauss-Newton solver
+    *   Output the polynomial coefficients as features, i.e. f'' as curvature,
+        the path length and the mean distance to all points.
     
+*   Compute the buddy angle
+    *   Compute the plane of the parabolas of the parent and child
+    *   Compute the closest point of both parabolas, note that they
+        don't need to intersect in general
+    *   Compute the tangent of both parabolas at this point
+    *   The angle between both tangents defines the buddy angle.
+
+*   Compute the edge orientation
+    *   Divide each label into "top" and "bottom"
+    *   Check if the parabola intersects with the "top" or "bottom" 
+        part of the parent.
+
 *   Other applications
     *   Jürgen could eventually use the PCA features for the element origin analysis
         he showed me a year ago. Let's ask him.
@@ -70,6 +94,10 @@ This Python package implements *Cora - The Coral Explorer* application. An inter
     Add a column to the data frame with the paths to images for each sample. The ImageView shows a grid with the thumbnails of the current selection and the thumbnails may also be attached to the hover tool.
 *   3D Point Clouds\
     This could help to identify clusters in 3D, not relying only on 2D scatter plots.
+*   Center Line Tree\
+    Implement the Radius-Lifted center line trees.
+*   Isomorphic 2D Graph Layout\ 
+    Use the Buddy-Angles to create an isomorphic as possible 2D graph layout of the coral framework.
 
 ## Rationale
 

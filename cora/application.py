@@ -13,6 +13,7 @@ import bokeh
 import bokeh.layouts
 import bokeh.models
 import bokeh.plotting
+import bokeh.document
 
 import pandas as pd
 
@@ -40,14 +41,25 @@ class Application(object):
     and global configuration and layout.
     """
 
-    def __init__(self, data_provider: DataProvider):
+    def __init__(self, data_provider: DataProvider, doc: bokeh.document.Document):
         """ """
+        #: The Bokeh document shown in the client.
+        #: We store a reference here so that all (background) threads may update
+        #: the same document.
+        #:
+        #: https://docs.bokeh.org/en/latest/docs/user_guide/server/app.html#updating-from-threads
+        #:
+        #: Each client has its own document and application.
+        #:
+        #: XXX: I think it's not good that the data provider is shared.
+        self.doc = doc
+
         # -- Input Data --
 
         #: The shared, only truth of source with the vertex and edge
         #: data.
         self.data_provider = data_provider
-        self.data_provider.on_change(self.on_data_provider_change)
+        self.data_provider.on_change.connect(self.on_data_provider_change)
 
         #: If true, then the data is reloaded automatic when a change
         #: was detected.
@@ -174,7 +186,7 @@ class Application(object):
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="Embedding", 
+            value="Graph", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -213,6 +225,7 @@ class Application(object):
     
     def reload(self):
         """Reloads the data and updates the UI."""
+        print("reload ...")
         self.data_provider.reload()
         
         self.df = self.data_provider.df
@@ -355,11 +368,20 @@ class Application(object):
 
     # -- UI signals --
 
-    def on_data_provider_change(self):
-        """The data frames were modified externally."""
+    def _on_data_provider_change(self):
+        """Internal update method that runs guaranteed in the same
+        event loop as the document.
+        """
         self.ui_button_reload.disabled = False
         if self.automatic_reload:
             self.reload()
+        return None
+
+    def on_data_provider_change(self, sender: DataProvider):
+        """The data frames were modified externally."""
+        # NOTE: This method may be called from a different thread. So 
+        #       we schedule the "real" update on the next event loop tick.
+        self.doc.add_next_tick_callback(self._on_data_provider_change)
         return None
 
     def on_ui_button_reload_click(self):

@@ -8,7 +8,7 @@ with changes occuring in the data.
 
 from collections import namedtuple
 import pathlib
-from typing import Callable, Optional, List, Dict, Set
+from typing import Callable, Optional, List, Dict, Set, Any
 
 import networkx as nx
 import numpy as np
@@ -32,16 +32,41 @@ __all__ = [
 #: a dirty flag indicating that the in memory data is outdated, 
 #: the actual data in the file and a watch handle used 
 #: by the watchdog library.
-FileHandle = namedtuple(
-    "FileHandle", 
-    ["path", "prefix", "dirty", "data", "observed_watch"]
-)
+class FileHandle(object):
 
+    def __init__(
+            self, *, 
+            path: pathlib.Path, 
+            prefix: str, 
+            dirty: bool, 
+            data: Any, 
+            observed_watch: Optional[watchdog.observers.api.ObservedWatch]
+        ):
+        super().__init__()
+        self.path = path.absolute()
+        self.prefix = prefix
+        self.dirty = dirty
+        self.data = data
+        self.observed_watch = observed_watch
+        return None
+    
 
-DirectoryHandle = namedtuple(
-    "DirectoryHandle",
-    ["path", "file_handles", "observed_watch"]
-)
+class DirectoryHandle(object):
+    """Handle containing information about a directory that is being watched
+    and the file handles of the resources that are inside and of interest.
+    """
+
+    def __init__(
+            self, *, 
+            path: pathlib.Path,
+            file_handles: Set[FileHandle],
+            observed_watch: watchdog.observers.api.ObservedWatch
+        ):
+        super().__init__()
+        self.path = path.absolute()
+        self.file_handles = file_handles
+        self.observed_watch = observed_watch
+        return None
 
 
 class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandler):
@@ -61,7 +86,6 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
     """
 
     def __init__(self):
-        print("INITI DATAPROVIDER")
         DataProvider.__init__(self)
         watchdog.events.FileSystemEventHandler.__init__(self)
 
@@ -95,6 +119,7 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
         #: Watchdog watching for file modifications.
         self.observer = watchdog.observers.Observer()
+        self.observer.start()
         return None
 
     def add_vertex_csv(self, path: pathlib.Path, prefix=""):
@@ -113,7 +138,7 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
             observed_watch=None
         )
 
-        self.file_handles[path] = info
+        self.file_handles[info.path] = info
         self.vertex_handles.add(info)
 
         self.watch(info)
@@ -135,7 +160,7 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
             observed_watch=None
         )
 
-        self.file_handles[path] = info
+        self.file_handles[info.path] = info
         self.edge_handles.add(info)
         
         self.watch(info)
@@ -215,7 +240,7 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
             return None
 
         # Watch the parent directory.
-        self.watch_directory(info.path.parent())
+        self.watch_directory(info.path.parent)
 
         # Watch the file itself if it exists.
         if info.path.exists():
@@ -242,7 +267,9 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         If the file belongs to a registered resource, we start watching it
         and mark it as *loadable*.
         """
-        info = self.file_handles.get(event.src_path)
+        src_path = pathlib.Path(event.src_path).absolute()
+        info = self.file_handles.get(src_path)
+
         if info is not None:
             self.watch(info)
             self.notify_change()
@@ -254,7 +281,9 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         We mark the resource as *dirty* and *non-existent*. A reload will
         be blocked until the resource becomes available again.
         """
-        info = self.file_handles.get(event.src_path)
+        src_path = pathlib.Path(event.src_path).absolute()
+        info = self.file_handles.get(src_path)
+
         if info is not None:
             self.unwatch(info)
             self.notify_change()
@@ -266,7 +295,9 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         A resource was modified, so we mark it as dirty, notify the Cora
         application and eventually trigger a reload.
         """
-        info = self.file_handles.get(event.src_path)
+        src_path = pathlib.Path(event.src_path).absolute()
+        info = self.file_handles.get(src_path)
+        
         if info is not None:
             info.dirty = True
             self.notify_change()
@@ -285,13 +316,13 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
     def is_ready(self):
         """True if all resources are ready and can be loaded."""
-        return all(info.path.exists() for info in self.file_handles)
+        return all(info.path.exists() for info in self.file_handles.values())
 
     def is_dirty(self):
         """True if at least one resource has been modified and 
         the data must be reloaded.
         """
-        return any(info.dirty for info in self.file_handles)
+        return any(info.dirty for info in self.file_handles.values())
 
     def reload_vertex(self):
         """Reload all vertex data."""
@@ -300,16 +331,15 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
                 info.data = None
                 info.dirty = True
             elif info.dirty:
-                info.data = pd.read_csv(info.path)
+                info.data = pd.read_csv(info.path, header=1)
                 info.dirty = False
 
         # Merge all individiual data frames into one.
         dfs = [
-            info.data.add_prefix(info.prefix) \
+            info.data.add_prefix(f"{info.prefix}:") \
             for info in self.vertex_handles \
             if info.data is not None
-            
-        ]
+        ]        
         if dfs:
             self.df = pd.concat(dfs, axis="columns")
         return None
@@ -321,15 +351,14 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
                 info.data = None
                 info.dirty = True
             elif info.dirty:
-                info.data = pd.read_csv(info.path)
+                info.data = pd.read_csv(info.path, header=1)
                 info.dirty = False
 
         # Merge all individiual data frames into one.
         dfs = [
-            info.data.add_prefix(info.prefix) \
+            info.data.add_prefix(f"{info.prefix}:") \
             for info in self.edge_handles \
             if info.data is not None
-            
         ]
         if dfs:
             self.df_edges = pd.concat(dfs, axis="columns")
@@ -367,7 +396,4 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         self.reload_edge()
         self.reload_vertex_field()
         self.reload_edge_field()
-
-        # Done.
-        self.notify_change()
         return None

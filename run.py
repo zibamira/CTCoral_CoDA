@@ -21,10 +21,10 @@ import cora.data_provider
 # Create the argument parser.
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--vertex", action="append", default=[], type=pathlib.Path, nargs="*"
+    "--vertex", action="extend", type=pathlib.Path, nargs="*"
 )
 parser.add_argument(
-    "--edge", action="append", default=[], type=pathlib.Path, nargs="*"
+    "--edge", action="extend", type=pathlib.Path, nargs="*"
 )
 parser.add_argument(
     "--vertex-field", action="store", type=pathlib.Path
@@ -35,6 +35,14 @@ parser.add_argument(
 parser.add_argument(
     "--dev-random", action="store_const", const=True,
     help="Ignore the provided files and use random test data as input."
+)
+parser.add_argument(
+    "--preset", action="store", choices=["corals"],
+    help="Launch Cora using a preset for the settings."
+)
+parser.add_argument(
+    "--start-browser", action="store_const", const=True,
+    help="Open a new tab in the browser with cora."
 )
 args = parser.parse_args()
 
@@ -57,15 +65,10 @@ else:
         provider.set_edge_field(args.edge_field)
 
 
-    print(provider.is_ready())
-    print(provider.is_dirty())
-
-
-app = cora.application.Application(provider)
-app.reload()
-
 def cora_doc(doc):
     """Creates the cora document and application."""
+    app = cora.application.Application(provider, doc)
+    app.reload()
 
     doc.add_root(app.layout)
     doc.set_title("Cora - The Coral Explorer")
@@ -78,5 +81,7 @@ server = bokeh.server.server.Server(
 )
 server.start()
 
-server.io_loop.add_callback(server.show, "/")
+if args.start_browser:
+    server.io_loop.add_callback(server.show, "/")
+
 server.io_loop.start()
