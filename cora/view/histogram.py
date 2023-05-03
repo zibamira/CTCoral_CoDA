@@ -9,20 +9,16 @@ area bar chart. Each bar split into the different labels.
 """
 
 from pprint import pprint
-from typing import Dict, Any
 
 import bokeh
 import bokeh.plotting
 import bokeh.models
-import bokeh.layouts
 
-from natsort import natsorted
-import pandas as pd
 import numpy as np
 
 from cora.application import Application
-from cora.utils import FactorMap, scalar_columns
 from cora.view.base import ViewBase
+from cora.utils import FactorMap, scalar_columns
 
 
 __all__ = [
@@ -33,7 +29,7 @@ __all__ = [
 
 class HistogramPlot(object):
     """A high level histogram plotting interface. This class
-    takes shows a (stacked) bar chart of the histogram in a given
+    shows a (stacked) bar chart of the histogram in a given
     column of the data frame. 
 
     The histogram is drawn as stacked area chart if an additional
@@ -43,6 +39,24 @@ class HistogramPlot(object):
     The histogram is interactive and computed for the current selection
     as well as the inverted selection, so that both histograms can be
     compared directly.
+
+    This plot maintains its own internal column data source since
+    the aggregated data cannot be part of the global source.
+
+    :param source: 
+        The column data source used to compute the histogram. The 
+        histogram is updated when the selection in this source 
+        changes.
+    :param field: 
+        The field in :attr:`source` shown in the histogram.
+    :param figure: 
+        The Bokeh figure on which the histogram is drawn onto.
+    :param nbins: 
+        The number of bins.
+    :param factor_map: 
+        The factors for the stacks in the stacked bar chart. The
+        factor map must be based on a field in the :attr:`source`.
+        The histogram is updated when the factor map changes.
     """
 
     def __init__(
@@ -249,8 +263,6 @@ class HistogramPlot(object):
     def update(self):
         """Recomputes the histogram and updates the column data sources."""
         self.compute_histogram()
-        self.figure.y_range.start = -1.05*self.hist_max
-        self.figure.y_range.end = 1.05*self.hist_max
         return None 
 
     def draw(self):
@@ -323,36 +335,47 @@ class HistogramView(ViewBase):
     """A view panel displaying a single histogram plot."""
 
     def __init__(self, app: Application):
-        """ """
         super().__init__(app)
-
-        # Filter out columns that are not supported.
-        columns = scalar_columns(self.app.df)
 
         #: UI widget for choosing the data column.
         self.ui_select_column = bokeh.models.Select(
             title="Column", 
-            sizing_mode="stretch_width",
-            options=columns, 
-            value=columns[0]
+            sizing_mode="stretch_width"
         )
         self.ui_select_column.on_change(
             "value", self.on_ui_select_column_change
         )
 
+        #: The figure showing the histogram.
+        self.figure: bokeh.models.Model = None
+
+        #: The :class:`HistogramPlot` drawn onto the :attr:`figure`.
+        self.phist: HistogramPlot = None
+
         # Sidebar layout.
         self.layout_sidebar.children = [
             self.ui_select_column
         ]
+        return None    
 
-        # Create the figure.
-        self.update()
+    def reload_df(self):
+        """Update the UI to the available columns."""
+        columns = scalar_columns(self.app.df)
+
+        self.ui_select_column.options = columns
+        if self.ui_select_column.value not in columns:
+            default_column = columns[0] if columns else None
+            self.ui_select_column.value = default_column
         return None
+    
+    def reload_cds(self):
+        """Create the figure if not yet done."""
+        self.update_plot()
+        return None    
 
-    def update(self):
-        """Creates the figure showing the histogram and replaces
-        the current plot.
-        """
+    def update_plot(self):
+        """Creates a new figure and histogram plot and replaces the old ones."""
+        # Create the figure.
         pfigure = bokeh.plotting.figure(
             title="Histogram",
             sizing_mode="stretch_both",
@@ -362,7 +385,8 @@ class HistogramView(ViewBase):
             x_axis_label=self.ui_select_column.value
         )
         pfigure.xgrid.visible = False
-        
+
+        # Create the histogram.
         phist = HistogramPlot(
             source=self.app.cds,
             field=self.ui_select_column.value,
@@ -371,9 +395,19 @@ class HistogramView(ViewBase):
             figure=pfigure
         )
 
+        # Scale the axis so that the histogrma is visible.
+        pfigure.y_range.start = -1.05*phist.hist_max
+        pfigure.y_range.end = 1.05*phist.hist_max
+
+        # Done.
+        self.figure = pfigure
+        self.phist = phist
         self.layout_panel.children = [pfigure]
         return None
     
     def on_ui_select_column_change(self, attr, old, new):
-        self.update()
+        """The user selected another column."""
+        if self.is_reloading:
+            return None
+        self.update_plot()
         return None
