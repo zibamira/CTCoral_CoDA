@@ -190,7 +190,7 @@ class Application(object):
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="Scatter", 
+            value="Histogram", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -446,14 +446,24 @@ class Application(object):
 
     def on_ui_select_panel_left_change(self, attr, old, new):
         """The user wants to view another plot in the left panel."""
-        self.panel_left = self.create_view(new)
+        view = self.create_view(new)
+        with view.begin_reload():
+            view.reload_df()
+            view.reload_cds()
+
+        self.panel_left = view
         self.update_layout_sidebar()
         self.update_layout()
         return None
     
     def on_ui_select_panel_right_change(self, attr, old, new):
         """The user wants to view another plot in the right panel."""
-        self.panel_right = self.create_view(new)
+        view = self.create_view(new)
+        with view.begin_reload():
+            view.reload_df()
+            view.reload_cds()
+
+        self.panel_right = view
         self.update_layout_sidebar()
         self.update_layout()
         return None
