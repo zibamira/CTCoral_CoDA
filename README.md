@@ -50,10 +50,13 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
 # Future
 
 *   Finalize the filesystem data provider
-    *   Make it work
-    *   Make the watchdog work
     *   Implement the selection mask output
-    *   Refactor all updates into a two stage process: "df -> cds".
+    *   Refactor reloading for PCAView
+    *   Refactor reloading for UMAPView
+    *   Refactor reloading for EmbeddingView
+    *   Refactor reloading for MapView
+    *   Refactor reloading for SPLOMView
+
 *   Finalize the watchdog interface in Amira
     *   Make sure the reload works
     *   Use dummy objects to delay the first read
