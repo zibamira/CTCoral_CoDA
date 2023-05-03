@@ -21,43 +21,71 @@ __all__ = [
 
 
 class TableView(ViewBase):
-    """Displays a dataframe or a subset of the columns in 
-    a standard spreadsheet view.
+    """Displays a dataframe or a subset of the columns in a standard spreadsheet 
+    view. The user can select which columns they want to display.
     """
 
     def __init__(self, app: Application):
         super().__init__(app)
 
         #: The columns to display.
-        self.column_names: List[str] = []
+        self.ui_multichoice_columns = bokeh.models.MultiChoice(
+            title="Columns",
+            sizing_mode="stretch_width"
+        )
+        self.ui_multichoice_columns.on_change(
+            "value", self.on_multichoice_columns_change
+        )
 
         #: The Bokeh table widget displaying the columns.
         self.table: bokeh.models.DataTable = None
 
-        # Init.
-        self.update()
+        # Layout.
+        self.layout_sidebar.children = [
+            self.ui_multichoice_columns
+        ]
+        return None
+    
+    def reload_df(self):
+        """Update the available columns to display in the spreadsheet."""
+        # Filter out columns that are not present anymore in the dataframe.
+        columns = data_columns(self.app.df)
+        selection = self.ui_multichoice_columns.value
+        selection = [column for column in selection if column in columns]
+
+        self.ui_multichoice_columns.options = columns
+        self.ui_multichoice_columns.value = selection
         return None
 
-    def update(self):
-        """Creates the table if not yet done and updates the set of colums (fields)
-        that are shown.
-        """
-        cds = self.app.cds
-        df = self.app.df
-        
-        # Update the column subset.
-        column_names = self.column_names or data_columns(df)
-        columns = [
-            bokeh.models.TableColumn(field=column_name) \
-            for column_name in column_names
-        ]
-        
-        # Create the table if not yet done.
+    def reload_cds(self):
+        """Reload the selected columns."""
+        if self.table is None:
+            self.create_table()
+        else:
+            self.update_columns()
+        return None    
+
+    def on_multichoice_columns_change(self, attr, old, new):
+        """The user changed the subset of columns to display."""
+        if self.is_reloading:
+            return None
+        self.update_columns()
+        return None
+
+    def create_table(self):
+        """Creates the spreadsheet table view."""
         self.table = bokeh.models.DataTable(
-            source=cds, 
-            columns=columns,
+            source=self.app.cds, 
+            columns=self.ui_multichoice_columns.value,
             sizing_mode="stretch_both"
         )
         self.layout_panel = self.table
+        return None
+    
+    def update_columns(self):
+        """Changes the subset of displayed column in the table widget."""        
+        columns = self.ui_multichoice_columns.value
+        columns = [bokeh.models.TableColumn(field=column) for column in columns]
+        self.table.columns = columns
         return None
     
