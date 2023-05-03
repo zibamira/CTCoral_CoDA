@@ -21,7 +21,7 @@ import networkx as nx
 
 from cora.application import Application
 from cora.view.base import ViewBase
-from cora.utils import data_columns
+import cora.utils
 
 
 __all__ = [
@@ -54,9 +54,6 @@ class GraphView(ViewBase):
         """ """        
         super().__init__(app)
 
-        # Candidates for the source and target columns.
-        source_column, target_column = self.detect_source_target_columns()
-
         # -- UI sidebar --
 
         #: Widget for switching between directed and undirected graph 
@@ -80,17 +77,13 @@ class GraphView(ViewBase):
         #: Menu for selecting the column with the start indices.
         self.ui_select_column_source = bokeh.models.Select(
             title="Source Column",
-            options=data_columns(self.app.df_edges),
-            sizing_mode="stretch_width",
-            value=source_column
+            sizing_mode="stretch_width"
         )
 
         # Menu for selectin the column with the target indices.
         self.ui_select_column_target = bokeh.models.Select(
             title="Target Column",
-            options=data_columns(self.app.df_edges),
-            sizing_mode="stretch_width",
-            value=target_column
+            sizing_mode="stretch_width"
         )
 
         #: Button for recomputing the graph layout.
@@ -129,27 +122,57 @@ class GraphView(ViewBase):
 
         #: The scatter plot renderer showing the vertices.
         self.pvertices = bokeh.models.Model = None
-
-        # Init.
-        self.update_nx_graph()
-        self.update_graph_layout()
-        self.update_plot()
         return None
     
+
+    def reload_df(self):
+        """Reload the graph and recompute the layout."""
+        # Candidates for all source and target columns identifiying the 
+        # edge orientation.
+        integral_columns = cora.utils.integral_columns(self.app.df_edges)
+        self.ui_select_column_source.options = integral_columns
+        self.ui_select_column_target.options = integral_columns
+
+        # Check if the currently selected source and target columns
+        # are still available and set them to default values if not.
+        source_column = self.ui_select_column_source.value
+        target_column = self.ui_select_column_target.value        
+        if not (source_column in integral_columns and target_column in integral_columns):
+            source_column, target_column = self.detect_source_target_columns()
+            self.ui_select_column_source.value = source_column
+            self.ui_select_column_target.value = target_column
+
+        # Update the internal nx graph and recompute the layout if the graph
+        # changed.
+        changed = self.update_nx_graph()
+        if changed:
+            self.update_graph_layout()
+        return None    
     
+    def reload_cds(self):
+        """Creates the graph plot if not yet done."""
+        if self.figure is None:
+            self.create_plot()
+        return None
+    
+
     def on_ui_select_graph_layout_change(self, attr, old, new):
         """The user selected a new graph layout algorithm."""
+        if self.is_reloading:
+            return None
+        
         self.update_graph_layout()
-        self.update_plot()
         return None
 
     def on_ui_button_recompute_layout_click(self):
         """The user wants to compute the layout again, with a new seed."""
+        if self.is_reloading:
+            return None
+        
         self.update_graph_layout()
-        self.update_plot()
         return None
     
-
+    
     def detect_source_target_columns(self):
         """Detect the *source* and *target* columns in the edge data frame
         automatic by trying it out frequently used names.
@@ -179,6 +202,9 @@ class GraphView(ViewBase):
     def update_nx_graph(self):
         """Replaces the networkx graph :attr:`nx_graph` with the current
         graph stored in the pandas DataFrames.
+
+        This method returns *True* if the graph changed, i.e. is not 
+        isomorphic to the current grap.
         """
         source_column = self.ui_select_column_source.value
         target_column = self.ui_select_column_target.value
@@ -189,12 +215,21 @@ class GraphView(ViewBase):
             )
             return None
 
-        # We only need the networkx graph to compute the layout.
-        self.nx_graph = nx.from_pandas_edgelist(
-            self.app.df_edges, source=source_column, target=target_column,
-            edge_attr=None, create_using=nx.DiGraph
+        # The networkx graph is only used to compute the layout. The 
+        # attributes are not not needed.
+        new_graph = nx.from_pandas_edgelist(
+            self.app.df_edges, 
+            source=source_column, 
+            target=target_column,
+            create_using=nx.DiGraph
         )
-        return None
+        
+        # Check if the graph changed.
+        changed = self.nx_graph is None \
+            or not nx.is_isomorphic(self.nx_graph, new_graph)
+                
+        self.nx_graph = new_graph
+        return changed
         
     def update_graph_layout(self):
         """Computes the layout using layout algorithm chosen by the user.
@@ -270,30 +305,32 @@ class GraphView(ViewBase):
 
         angle = np.arctan2(dy, dx) + np.pi/6.0 
 
-        # Perform the edge column data source update at once.
-        cds_edges_data = {
-            **self.app.cds_edges.data,
-            "cora:xs": xs,
-            "cora:ys": ys,
-            "cora:arrow_x0": x0,
-            "cora:arrow_y0": y0,
-            "cora:arrow_x1": x1,
-            "cora:arrow_y1": y1,
-            "cora:arrow_angle": angle
-        }
-        self.app.cds_edges.data = cds_edges_data
+        # Update the edge data.
+        df_edges = self.app.df_edges
+        df_edges["cora:graph:xs"] = xs
+        df_edges["cora:graph:ys"] = ys
+        df_edges["cora:graph:arrow_x0"] = x0
+        df_edges["cora:graph:arrow_y0"] = y0
+        df_edges["cora:graph:arrow_x1"] = x1
+        df_edges["cora:graph:arrow_y1"] = y1
+        df_edges["cora:graph:arrow_angle"] = angle
 
-        # Perform the vertex column data update at once.
-        cds_vertex_data = {
-            **self.app.cds.data,
-            "cora:vertex_position_x": positions[:, 0],
-            "cora:vertex_position_y": positions[:, 1]
-        }
-        self.app.cds.data = cds_vertex_data
+        # Update the vertex data.
+        df_vertices = self.app.df
+        df_vertices["cora:graph:x"] = positions[:, 0]
+        df_vertices["cora:graph:y"] = positions[:, 1]
+
+        # Schedule a column data source update.
+        self.app.push_df_to_cds(vertex=True, edge=True)
         return None
     
-    def update_plot(self):
-        """Creates the Bokeh plot showing the graph."""
+    def create_plot(self):
+        """Creates the Bokeh plot showing the graph using the layout computed
+        earlier with :meth:`update_graph_layout`.
+
+        The figure needs to be created only once since all render information
+        are stored in the column data source.
+        """        
         # XXX: Bokeh 3.1 does not allow to specifiy another column name
         #      for the edge source and target column. In Bokeh, they are
         #      always called "start" and "end". 
@@ -328,10 +365,10 @@ class GraphView(ViewBase):
         )
         pedges_arrow = bokeh.models.Arrow(
             end=head,
-            x_start="cora:arrow_x0",
-            y_start="cora:arrow_y0",
-            x_end="cora:arrow_x1",
-            y_end="cora:arrow_y1",
+            x_start="cora:graph:arrow_x0",
+            y_start="cora:graph:arrow_y0",
+            x_end="cora:graph:arrow_x1",
+            y_end="cora:graph:arrow_y1",
             line_color="cora:edge:color:glyph",
             source=self.app.cds_edges
         )
@@ -349,10 +386,9 @@ class GraphView(ViewBase):
 
         # edges (multiline)
         pedges_line = p.multi_line(
-            xs="cora:xs",
-            ys="cora:ys",
+            xs="cora:graph:xs",
+            ys="cora:graph:ys",
             line_color="cora:edge:color:glyph",
-            syncable=True,
             line_cap="round",
             source=self.app.cds_edges
         )
@@ -372,11 +408,11 @@ class GraphView(ViewBase):
 
         # vertices        
         pvertices = p.scatter(
-            x="cora:vertex_position_x",
-            y="cora:vertex_position_y",
-            source=self.app.cds,
+            x="cora:graph:x",
+            y="cora:graph:y",
             color="cora:color:glyph",
-            marker="cora:marker:glyph"
+            marker="cora:marker:glyph",
+            source=self.app.cds
         )
 
         pvertices.glyph.size = self.app.ui_slider_size.value
@@ -388,10 +424,10 @@ class GraphView(ViewBase):
         self.app.ui_slider_opacity.js_link("value", pvertices.glyph, "line_alpha")
 
         # Done.
-        # self.pedges_arrow = pedges_arrow
-        # self.pedges_line = pedges_line
-        self.pvertices = pvertices
         self.figure = p
+        self.pedges_line = pedges_line
+        self.pedges_arrow = pedges_arrow
+        self.pvertices = pvertices
 
         self.layout_panel = self.figure
         return None

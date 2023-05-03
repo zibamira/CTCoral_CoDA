@@ -53,6 +53,7 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
     *   Make it work
     *   Make the watchdog work
     *   Implement the selection mask output
+    *   Refactor all updates into a two stage process: "df -> cds".
 *   Finalize the watchdog interface in Amira
     *   Make sure the reload works
     *   Use dummy objects to delay the first read
@@ -60,7 +61,7 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
 
 *   Fix the segmentation fault in the SaM shortest path computation
 
-*   Fit a parabola curve to the coral points clouds
+*   Fit a parabola curve to the Coral points clouds
     *   Implement a plane fit first
     *   Refine the rotation and curve parameters with a Gauss-Newton solver
     *   Output the polynomial coefficients as features, i.e. f'' as curvature,
@@ -77,6 +78,8 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
     *   Divide each label into "top" and "bottom"
     *   Check if the parabola intersects with the "top" or "bottom" 
         part of the parent.
+
+*   Throttle Callbacks
 
 *   Other applications
     *   Jürgen could eventually use the PCA features for the element origin analysis
@@ -97,7 +100,8 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
 *   Center Line Tree\
     Implement the Radius-Lifted center line trees.
 *   Isomorphic 2D Graph Layout\ 
-    Use the Buddy-Angles to create an isomorphic as possible 2D graph layout of the coral framework.
+    Use the Buddy-Angles to create an isomorphic as possible 2D graph layout of the Coral framework.
+    
 
 ## Rationale
 
@@ -105,3 +109,13 @@ This section contains some design rationales and also why I decided against some
 
 *   **Filter Widgets**\
     Filter widgets usually work with range widgets or select menu. The range based filtering can be done with the BoxSelection tool and the select menu similarly in the scatter plot view. So it was not worth the trouble adding these widgets when they are not as easy to use. After all, the mouse tools allow for a better interactive approach.
+*   **Delayed Updates and Reload**\
+    Handling the reloading in a stable manner is a bit tricky. The multi-stage process looks roughly like this:
+    *   The data provider detects a change and notifies the Cora application.
+    *   An automatic reload is triggered or the user is notified.
+    *   Cora sets the *is_reloading* flag to *True*.
+    *   The data provider reloads the data.
+    *   The views and helpers updated additional render information and store them in the data frames *df* and *df_edges.
+    *   The Bokeh column data sources are updated with the content in the *df* and *df_edges* data frames.
+    *   The views update the plots to account for the new data if needed.
+    *   The reload is done and Cora sets the *is_reloading* flag to *False*.

@@ -150,7 +150,7 @@ class FactorMap(object):
         self.on_update = blinker.Signal()
         return None
 
-    def update(self):
+    def update_df(self):
         """Recomputes the internal factor map.
         
         This method will leave the column data source unchanged.
@@ -168,6 +168,10 @@ class FactorMap(object):
             
             self.id_map = {"None": 0}
             self.id_column = np.zeros(nrows)
+            
+            df = self.df
+            df[f"{self.name}:glyph"] = self.glyph_column
+            df[f"{self.name}:id"] = self.id_column
             return None
 
         # Get all unique factors in the discrete label column and 
@@ -184,14 +188,17 @@ class FactorMap(object):
         # Create the id column.
         self.id_map = {factor: i for i, factor in enumerate(self.factors)}
         self.id_column = [self.id_map[factor] for factor in self.df[self.column_name]]
+
+        # Update the dataframe.
+        df = self.df
+        df[f"{self.name}:glyph"] = self.glyph_column
+        df[f"{self.name}:id"] = self.id_column
         return None
     
-    def update_cds(self):
+    def push_df_to_cds(self):
         """Updates the column data source with the current
         internal state of the data.
         """
-        self.update()
-
         data = self.cds.data
         data[f"{self.name}:glyph"] = self.glyph_column
         data[f"{self.name}:id"] = self.id_column

@@ -65,6 +65,10 @@ class Application(object):
         #: was detected.
         self.automatic_reload = False
 
+        #: True if the application is currently reloading the data and
+        #: and updating all views.
+        self.is_reloading = False
+
         #: The raw pandas DataFrame input enriched 
         #: with the glyph and color column.
         self.df = data_provider.df
@@ -225,15 +229,19 @@ class Application(object):
     
     def reload(self):
         """Reloads the data and updates the UI."""
+        if self.is_reloading:
+            return None
+        
+        self.is_reloading = True
+
         print("reload ...")
         self.data_provider.reload()
-        
+
+        # Keep a reference to the new data frames.        
         self.df = self.data_provider.df
         self.df_edges = self.data_provider.df_edges
 
-        self.cds.data = self.df
-        self.cds_edges.data = self.df_edges
-
+        # Update the glyph menus.
         self.ui_select_color.options = ["None"] + cora.utils.label_columns(self.df)
         self.ui_select_marker.options = ["None"] + cora.utils.label_columns(self.df)
         self.ui_select_color_edges.options = ["None"] + cora.utils.label_columns(self.df_edges)
@@ -242,20 +250,50 @@ class Application(object):
         self.update_markermap()
         self.update_edge_colormap()
 
-        if self.panel_left is not None:
-            self.panel_left.reload()
-        elif self.ui_select_panel_left.value:
+        # Create the views if not yet done.
+        if self.panel_left is None and self.ui_select_panel_left.value:
             self.panel_left = self.create_view(self.ui_select_panel_left.value)
-
-        if self.panel_right is not None:
-            self.panel_right.reload()
-        elif self.ui_select_panel_right.value:
+        if self.panel_right is None and self.ui_select_panel_right.value:
             self.panel_right = self.create_view(self.ui_select_panel_right.value)
 
+        # Reload the dataframes inside the views.
+        if self.panel_left is not None:
+            self.panel_left.reload_df()
+        if self.panel_right is not None:
+            self.panel_right.reload_df()
+
+        # Update the Bokeh documents.
+        self.push_df_to_cds(vertex=True, edge=True, force=True)
+
+        # Update the view plots.
+        if self.panel_left is not None:
+            self.panel_left.reload_cds()
+        if self.panel_right is not None:
+            self.panel_right.reload_cds()
+        
+        # Recompose the document.
         self.update_layout_sidebar()
         self.update_layout()
 
+        # We are done.
         self.ui_button_reload.disabled = True
+        self.is_reloading = False
+        return None
+
+    def push_df_to_cds(self, vertex: bool, edge: bool, force: bool=False):
+        """Replaces the Bokeh ColumnDataSource with the data in the data frames.
+        This will transmit the changed data to the client and trigger a render update.
+
+        TODO: Delay the update to the next tick so that multiple updates can be pushed
+              together in a single step.
+        """
+        if self.is_reloading and not force:
+            return None
+
+        if vertex:            
+            self.cds.data = self.df
+        if edge:
+            self.cds_edges.data = self.df_edges
         return None
     
     def update_colormap(self):
@@ -264,7 +302,7 @@ class Application(object):
         fmap.df = self.df
         fmap.cds = self.cds
         fmap.column_name = self.ui_select_color.value
-        fmap.update_cds()
+        fmap.update_df()
         return None
     
     def update_markermap(self):
@@ -273,17 +311,16 @@ class Application(object):
         fmap.df = self.df
         fmap.cds = self.cds
         fmap.column_name = self.ui_select_marker.value
-        fmap.update_cds()
+        fmap.update_df()
         return None
 
     def update_edge_colormap(self):
-        """Updates the colormap for the edges in the graph view."""
-        
+        """Updates the colormap for the edges in the graph view."""        
         fmap = self.fmap_color_edges
         fmap.df = self.df_edges
         fmap.cds = self.cds_edges
         fmap.column_name = self.ui_select_color_edges.value
-        fmap.update_cds()
+        fmap.update_df()
         return None        
     
 
@@ -392,16 +429,19 @@ class Application(object):
     def on_ui_select_color_change(self, attr, old, new):
         """The user changed the colormap column."""
         self.update_colormap()
+        self.fmap_color.push_df_to_cds()
         return None
 
     def on_ui_select_marker_change(self, attr, old, new):
         """The user changed the glyphmap column."""
         self.update_markermap()
+        self.fmap_marker.push_df_to_cds()
         return None
 
     def on_ui_select_color_edges_change(self, attr, old, new):
         """The user changed the edge colormap column."""
         self.update_edge_colormap()
+        self.fmap_color_edges.push_df_to_cds()
         return None
 
     def on_ui_select_panel_left_change(self, attr, old, new):
