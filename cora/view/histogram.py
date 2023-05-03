@@ -69,6 +69,8 @@ class HistogramPlot(object):
         factor_map: FactorMap = None
         ):
         """ """
+        super().__init__()
+        
         #: *input* The figure on which the histogram is drawn.
         self.figure = figure
 

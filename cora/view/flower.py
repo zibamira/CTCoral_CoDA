@@ -9,7 +9,7 @@ curve, which both are more beautiful.
 
 import functools
 import itertools
-from typing import Dict, List, Any, Literal
+from typing import Dict, List, Any, Literal, Tuple
 
 import bokeh
 import bokeh.plotting
@@ -20,85 +20,263 @@ import pandas as pd
 import numpy as np
 
 from cora.application import Application
-from cora.utils import scalar_columns
 from cora.view.base import ViewBase
+import cora.utils
 
 
 __all__ = [
     "FlowerPlot",
     "FlowerWedge",
     "FlowerCurve",
+    "FlowerRose",
+    "FlowerDrop",
     "FlowerView"
 ]
 
 
 class FlowerPlot(object):
-    """Base class for all Flower plots."""
+    """Base class for all Flower plots. This class aggregates the data columns
+    and computes information used in the flower plots.     
 
-    def __init__(self):
+    This class draw the flower on an existing figure.
+
+    :param source:
+        The column data source with the non-aggregated data.
+    :param field:
+        The fields in the :attr:`source` for which a petal is drawn.
+    :param figure:
+        The Bokeh figure the flower is drawn onto.
+    :param center:
+        The center of the flower. The default is the origin ``(0.0, 0.0)``.
+    :param radius:
+        The maximal radius of the flower. The default is ``1``.
+    """
+
+    def __init__(
+            self,
+            *,
+            source: bokeh.models.ColumnDataSource,
+            fields: List[str],
+            figure: bokeh.models.Model,
+            center: Tuple[float, float] = (0.0, 0.0),
+            radius: float = 1.0
+        ):
         """ """
-        #: *input* The dataframe containing all samples. The data here is used to determine
+        super().__init__()
+
+        #: The dataframe containing all samples. The data here is used to determine
         #: the overall scale of the petals.
-        self.df: pd.DataFrame = None
+        self.source = source
+        self.source.selected.on_change("indices", self.on_source_selected_change)
 
-        #: The dataframe with the current selection. 
-        self.df_selection: pd.DataFrame = None
+        #: The fields for which a petal is drawn.
+        self.fields = fields
 
-        #: The current selection (indices).
-        self.indices: List[int] = None
+        #: The figure onto which the petal is drawn.
+        self.figure = figure
 
-        #: A description / summary of the whole dataset.
-        #: Cached for efficiency.
+        #: The flower is centered at this point.
+        self.center = center
+
+        #: The maximal radius of the flower, i.e. distance from the :attr:`center`.
+        self.radius = radius
+
+
+        #: A description (mean, variance, skew, ...) of the whole dataset.
         self.desc: pd.DataFrame = None
 
-        #: A description / summary of the seletion.
+        #: A description (mean, variance, skew, ...) of the selection.
         self.desc_selection: pd.DataFrame = None
 
-        #: The current data dictionary for the column data source.
-        #: This dictionary is updated in subclasses and pushed at once
-        #: to the ColumnDataSource `cds`.
-        self.cds_data: Dict[str, Any] = dict()
 
-        #: The column data source the plot is based on.
-        #: If possible, only this source is updated when the selection
-        #: changes. This is more performant and less error prone than
-        #: recreating the plot every time the user interacts.
-        self.cds: bokeh.models.ColumnDataSource = None
+        #: The data dictionary for the :attr:`flower_source` column data source.
+        #: Changes are written to this dictionary first and then pushed at once
+        #: to the actual column data source.
+        self.data_flower: Dict[str, Any] = dict()
 
-        #: The figure displaying the flower.
-        self.figure: bokeh.models.Model = None
+        #: The actual column data source the flower plot is based on.
+        self.source_flower = bokeh.models.ColumnDataSource()
 
-        #: The renderer for the petals.
-        self.petals = bokeh.models.Model = None
+        #: The renderer for the petals. Must be set by subclasses. 
+        #: The hover and tap tool will work on this renderer.
+        self.petals: bokeh.models.Model = None
+
+        self.init_data_flower()
+        self.update()
+        self.draw()
         return None
+       
 
-    def set_df(self, df):
-        """Replaces the dataframe with the new one."""
-        if df is not self.df:
-            self.df = df
-            self.desc = df.describe()
-        return None
+    def init_data_flower(self):
+        """Initialises the :attr:`data_flower` dictionary so that
+        empty draw calls will not result in a Bokeh warning. 
+        This happens if the no field is given in :attr:`fields`.
 
-    def set_selection(self, indices):
-        """Updates the dataframe and description of the selected rows."""
-        if indices:
-            self.df_selection = self.df.loc[indices]
-            self.desc_selection = self.df_selection.describe()
-            self.indices = indices
-        else:
-            self.df_selection = self.df
-            self.desc_selection = self.desc
-            self.indices = indices
-        return None
-
-    def update_cds_label_data(self):
-        """Updates the positions of the labels.
-
-        The labels are drawn outside each petal, oriented towards
-        the center of the flower.
+        This method must be extended in subclasses if they add custom
+        render data to the column data source.
         """
-        ncolumns = len(self.df.columns)
-        radii = self.cds_data["radius"]
+        self.data_flower.update({
+            "start_angle": [],
+            "end_angle": [],
+            "radius": [],
+            "fill_color": [],
+            "column": [],
+            "mean": [],
+            "color": [],
+            "label_xs": [],
+            "label_ys": [],
+            "label_angle": [],
+            "label_align": []
+        })
+        return None
+    
+    
+    def draw_petals(self):
+        """Draws the petals.
+        
+        This method must be implemented in subclasses and is called
+        only once when the flower is drawn for the first time. All
+        other updates must happen inside the column data sources.
+        """
+        return None
+    
+    def draw(self):
+        """Draws the flower onto the figure."""
+        p = self.figure
+        x0, y0 = self.center
+        radius = self.radius
+
+        # Draw a bounding circle as additional visual hint.
+        # For some reason ``circle()`` was not really circular when used
+        # with bounded ranges.
+        p.ellipse(
+            x=x0, 
+            y=y0,
+            width=2.0*radius, 
+            height=2.0*radius,
+            fill_alpha=0.0,
+            line_color="grey",
+            line_dash="dotted",
+            line_width=1.0
+        )
+
+        # The actual glyph drawing is implemented in subclasses, e.g.
+        # wedges in FlowerWedge and parametric curves in FlowerCurve.
+        self.draw_petals()
+
+        # Draw the origin to hide the overlap region.
+        p.ellipse(
+            x=x0, 
+            y=y0, 
+            width=0.08*radius, 
+            height=0.08*radius, 
+            color="grey", 
+            line_color="grey"
+        )
+
+        # Draw the labels.
+        labels = bokeh.models.LabelSet(
+            x="label_xs",
+            y="label_ys",
+            text="column",
+            angle="label_angle",
+            text_align="label_align",
+            text_baseline="middle",
+            text_font_size="12px",
+            source=self.source_flower
+        )
+        p.add_layout(labels)
+
+        # The hover and tap tools should only work on the petals
+        # but not on the visual aids. So we have to create them
+        # manually.
+        hover = bokeh.models.HoverTool(renderers=[self.petals])
+        hover.tooltips = [
+            ("column", "@column"),
+            ("mean", "@mean")
+        ]
+
+        tap = bokeh.models.TapTool(renderers=[self.petals])
+
+        p.add_tools(hover, tap)
+        return None
+    
+
+    def update_description(self):
+        """Aggreagates the data for the currently selected fields 
+        and selection in :attr:`desc` and :attr:`desc_selection`.
+        """
+        columns = [np.array(self.source.data[field]) for field in self.fields]
+
+        self.desc = {
+            "max": np.array([np.max(column) for column in columns]),
+            "min": np.array([np.min(column) for column in columns]),
+            "quantile05": np.array([np.quantile(column, 0.05) for column in columns]),
+            "quantile95": np.array([np.quantile(column, 0.95) for column in columns])
+        }
+        return None
+    
+    def update_description_selection(self):
+        """Updates the description of the current selection."""        
+        columns = [np.array(self.source.data[field]) for field in self.fields]
+
+        selection = self.source.selected.indices
+        if selection:
+            columns = [column[selection] for column in columns]
+
+        self.desc_selection = {
+            "max": np.array([np.max(column) for column in columns]),
+            "min": np.array([np.min(column) for column in columns]),
+            "mean": np.array([np.mean(column) for column in columns]),
+            "median": np.array([np.median(column) for column in columns])
+        }
+        return None
+    
+
+    def update_flower_data(self):
+        """Recomputes the data :attr:`flower_data` dictionary."""
+        ncolumns = len(self.fields)
+
+        # Extract the attributes relevant for the pedal/wedge size
+        # and shape.
+        mean_selection = self.desc_selection["mean"]
+        min_total = self.desc["min"]
+        max_total = self.desc["max"]
+
+        # Divide the circle into segments of the same size.
+        # Each column has its own segment. The petals are scaled
+        # within 
+        delta = 2.0*np.pi/ncolumns if ncolumns else 2.0*np.pi
+        angles = np.linspace(0.0, 2.0*np.pi, ncolumns, endpoint=False)
+        radius = ((mean_selection - min_total)/(max_total - min_total))*self.radius
+        start_angle = angles - delta/2.0
+        end_angle = angles + delta/2.0
+
+        palette = bokeh.palettes.Spectral10
+        color = [color for _, color in zip(range(ncolumns), itertools.cycle(palette))]
+
+        # Update the column data source.
+        self.data_flower.update({
+            "start_angle": start_angle,
+            "end_angle": end_angle,
+            "radius": radius,
+            "fill_color": color,
+            "column": self.fields,
+            "mean": mean_selection,
+            "color": color
+        })
+
+        # Also update the label positions.
+        self.update_flower_label_data()
+        return None    
+
+    def update_flower_label_data(self):
+        """Updates the column data for the peta labels in :attr:`source_flower`.
+        The labels are drawn outside each petal and are oriented to the center 
+        of the flower.
+        """
+        ncolumns = len(self.fields)
+        radii = self.data_flower["radius"]
 
         xs = []
         ys = []
@@ -136,164 +314,52 @@ class FlowerPlot(object):
             angles.append(angle)
             alignments.append(alignment)
     
-        self.cds_data.update({
+        self.data_flower.update({
             "label_xs": xs,
             "label_ys": ys,
             "label_angle": angles,
             "label_align": alignments
         })
         return None
-
-    def update_cds_data(self):
-        """Recomputes the data :attr:`cds_data` dictionary for the 
-        Bokeh ColumnDataSource :attr:`cds`. 
-        """
-        ncolumns = len(self.df.columns)
-
-        # Extract the attributes relevant for the pedal/wedge size
-        # and shape.
-        mean_selection = self.desc_selection.loc["mean"]
-        min_total = self.desc.loc["min"]
-        max_total = self.desc.loc["max"]
-
-        # Divide the circle into segments of the same size.
-        # Each column has its own segment. The petals are scaled
-        # within 
-        delta = 2.0*np.pi/ncolumns
-        angles = np.linspace(0.0, 2.0*np.pi, ncolumns, endpoint=False)
-        radius = (mean_selection - min_total)/(max_total - min_total)
-        start_angle = angles - delta/2.0
-        end_angle = angles + delta/2.0
-
-        palette = bokeh.palettes.Spectral10
-        color = [color for _, color in zip(range(ncolumns), itertools.cycle(palette))]
-
-        # Update the column data source.
-        self.cds_data.update({
-            "start_angle": start_angle,
-            "end_angle": end_angle,
-            "radius": radius,
-            "fill_color": color,
-            "column": self.df.columns,
-            "mean": mean_selection,
-            "color": color
-        })
-
-        # Also update the label positions.
-        self.update_cds_label_data()
-        return None
     
-    def update_cds(self):
+    def push_flower_data_to_source(self):
         """Replaces the current Bokeh ColumnDataSource data with the
         data in :attr:`cds_data`, effectively replacing all render data
         at once.
         """
-        self.update_cds_data()
-        if not self.cds:
-            self.cds = bokeh.models.ColumnDataSource(self.cds_data)
-            self.cds.selected.on_change("indices", self.on_cds_selection_changed)
-        else:
-            self.cds.data = self.cds_data
+        self.source_flower.data = self.data_flower
         return None
     
-    def draw_petals(self):
-        """Draws the petals.
-        
-        This method must be implemented in subclasses.
-        """
+    def update(self):
+        """Updates the entire flower plot."""
+        self.update_description()
+        self.update_description_selection()
+        self.update_flower_data()
+        self.push_flower_data_to_source()
         return None
     
-    def on_cds_selection_changed(self, attr, old, new):
-        """Called when the user selection of the petals changed."""
-        columns = self.cds.data["column"]
-        columns = [columns[i] for i in new]
-        print("selected petals:", columns)
+    def on_source_selected_change(self, attr, old, new):
+        """The current selection changed."""
+        self.update_description_selection()
+        self.update_flower_data()
+        self.push_flower_data_to_source()
         return None
     
-    def create_figure(self):
-        """Creates the plot displaying the flower/wedge visualization."""
-        # We center the glyph in the ``[-1, -1] x [-1, 1]`` square around
-        # the origin.
-        # Additional space is allocated for the labels outside the glyph.
-        p = bokeh.plotting.figure(
-            syncable=True,
-            tools="reset,save,pan,wheel_zoom",
-            match_aspect=True,
-            sizing_mode="scale_both",
-            toolbar_location="above",
-            title="Flower"
-        )
-        p.xaxis.visible = False
-        p.yaxis.visible = False
-        p.xgrid.visible = False
-        p.ygrid.visible = False
-
-        self.figure = p
-
-        # Draw a bounding circle as additional visual hint.
-        # For some reason ``circle()`` was not really circular when used
-        # with bounded ranges.
-        p.ellipse(
-            x=0.0, 
-            y=0.0,
-            width=2.0, 
-            height=2.0,
-            fill_alpha=0.0,
-            line_color="grey",
-            line_dash="dotted",
-            line_width=1.0
-        )
-
-        # The actual glyph drawing is implemented in subclasses, e.g.
-        # wedges in FlowerWedge and parametric curves in FlowerCurve.
-        self.draw_petals()
-
-        # Draw the origin to hide the overlap region.
-        p.ellipse(
-            x=0.0, y=0.0, width=0.08, height=0.08, color="grey", line_color="grey"
-        )
-
-        # Draw the labels.
-        labels = bokeh.models.LabelSet(
-            x="label_xs",
-            y="label_ys",
-            text="column",
-            angle="label_angle",
-            text_align="label_align",
-            text_baseline="middle",
-            text_font_size="12px",
-            source=self.cds
-        )
-        p.add_layout(labels)
-
-        # The hover and tap tools should only work on the petals
-        # but not on the visual aids. So we have to create them
-        # manually.
-        hover = bokeh.models.HoverTool(renderers=[self.petals])
-        hover.tooltips = [
-            ("column", "@column"),
-            ("mean", "@mean")
-        ]
-
-        tap = bokeh.models.TapTool(renderers=[self.petals])
-        
-        p.add_tools(hover, tap)
-        return None
-
 
 class FlowerWedge(FlowerPlot):
     """The petals are simple wedges. This visualization is fast,
-    easy to compute and visualize.
+    easy to compute and looks sciency (i.e. boring).
     """
 
-    def __init__(self):
+    def __init__(self, *args, **kargs):
         """ """
-        super().__init__()
+        super().__init__(*args, **kargs)
         return None
     
     def draw_petals(self):
         """Draws a wedge for each petal."""
         p = self.figure
+        x0, y0 = self.center
 
         # Draw the wedge. Usually, only the cds is updated as long as 
         # the columns of the data frame don't change.
@@ -301,8 +367,8 @@ class FlowerWedge(FlowerPlot):
         # All the attributes are already available in the ColumnDataSource
         # so we don't have to compute anything new.
         self.petals = p.wedge(
-            x=0.0, 
-            y=0.0,
+            x=x0, 
+            y=y0,
             radius="radius",
             start_angle="start_angle",
             end_angle="end_angle",
@@ -310,7 +376,7 @@ class FlowerWedge(FlowerPlot):
             line_color="grey",
             line_width=1.0,
             direction="anticlock",
-            source=self.cds
+            source=self.source_flower
         )
         return None
     
@@ -377,24 +443,56 @@ def drop_curve_petal(npetals):
     
 
 class FlowerCurve(FlowerPlot):
-    """Creates a flower visualization of the current selection."""
+    """Creates a flower visualization of the current selection. The petals
+    curves are parametrized and given as a a point set / polygon.
+    """
 
-    def __init__(self):
+    def __init__(
+            self, *,
+            curve: Literal["rose", "drop"] = "rose",
+            **kargs
+        ):
         """ """
-        super().__init__()
-
         #: The curve for a single peta.
-        self.curve: Literal["rose", "drop"] = "rose"
+        self.curve = curve
+
+        # The base class will call the :meth:`draw` and :meth:`update`
+        # method. So we have to initialize it after setting the curve
+        # attribute.
+        super().__init__(**kargs)
+        return None
+
+    def init_data_flower(self):
+        super().init_data_flower()
+        self.data_flower.update({
+            "xs": [],
+            "ys": []
+        })
         return None
     
-    def update_cds_data(self):
-        """Adds data for the petal polygons to the data dictionary."""
+    def draw_petals(self):
+        """Creates the glyph renderer for the petal polygons."""
+        self.petals = self.figure.multi_polygons(
+            xs="xs",
+            ys="ys",
+            color="color",
+            line_color="grey",
+            source=self.source_flower
+        )
+        return None
+    
+    def update_flower_data(self):
+        """Adds additional render data for the petal polygons to the flower
+        data dictionary.
+        """
         # Recompute the basic information first.
-        super().update_cds_data()
+        super().update_flower_data()
 
         # Recompute the petals.
-        ncolumns = len(self.df.columns)
-        if self.curve == "drop":
+        ncolumns = len(self.fields)
+        if ncolumns == 0:
+            x, y = [], []
+        elif self.curve == "drop":
             x, y = drop_curve_petal(ncolumns)
         else:
             x, y = rose_curve_petal(ncolumns)
@@ -410,7 +508,7 @@ class FlowerCurve(FlowerPlot):
             yi = np.sin(rotation)*x + np.cos(rotation)*y
 
             # Scale it.
-            radius = self.cds_data["radius"][icolumn]
+            radius = self.data_flower["radius"][icolumn]
             xi = xi*radius
             yi = yi*radius
             
@@ -419,27 +517,29 @@ class FlowerCurve(FlowerPlot):
             xs.append([[xi]])
             ys.append([[yi]])
 
-        self.cds_data["xs"] = xs
-        self.cds_data["ys"] = ys
+        self.data_flower["xs"] = xs
+        self.data_flower["ys"] = ys
         return None
+    
 
-    def draw_petals(self):
-        """Creates the glyph renderer for the petal polygons."""
-        p = self.figure
-        ncolumns = len(self.df.columns)
+class FlowerRose(FlowerCurve):
+    """Dedicated subclass for flower plots with rose petals."""
 
-        self.petals = p.multi_polygons(
-            xs="xs",
-            ys="ys",
-            color="color",
-            line_color="grey",
-            source=self.cds
-        )
+    def __init__(self, **kargs):
+        super().__init__(**kargs, curve="rose")
+        return None
+    
+
+class FlowerDrop(FlowerCurve):
+    """Dedicated subclass for flower plots with drop-shaped petals."""
+
+    def __init__(self, **kargs):
+        super().__init__(**kargs, curve="drop")
         return None
     
 
 class FlowerView(ViewBase):
-    """Handles the flower plot view."""
+    """Shows a single flower plot in a view panel."""
 
     def __init__(self, app: Application):
         super().__init__(app)
@@ -454,50 +554,98 @@ class FlowerView(ViewBase):
         self.ui_select_flower.on_change(
             "value", self.on_ui_select_flower_change
         )
-        
-        #: The actual flower plot model.
-        self.flower: FlowerPlot = None
-        self.app.cds.selected.on_change(
-            "indices", self.on_cds_selection_change
+
+        #: UI for selecting the columns to display in the flower.
+        self.ui_multichoice_columns = bokeh.models.MultiChoice(
+            title="Columns",
+            sizing_mode="stretch_width"
+        )
+        self.ui_multichoice_columns.on_change(
+            "value", self.on_ui_multichoice_columns_change
         )
 
-        # Init.
-        self.layout_sidebar.children = [self.ui_select_flower]
-        self.update()
+        #: The figure showing the flower plot.
+        self.figure: bokeh.models.Model = None
+        
+        #: The actual flower plot drawn onto the figure :attr:`figure`.
+        self.flower: FlowerPlot = None
+
+        # Sidebar layout.
+        self.layout_sidebar.children = [
+            self.ui_select_flower,
+            self.ui_multichoice_columns
+        ]
         return None
+    
+
+    def reload_df(self):
+        """Update the UI to match the available columns in the dataset."""
+        columns = cora.utils.scalar_columns(self.app.df)
+
+        selection = self.ui_multichoice_columns.value
+        selection = [column for column in selection if column in columns]
+
+        self.ui_multichoice_columns.options = columns
+        self.ui_multichoice_columns.value = selection
+        return None
+
+    def reload_cds(self):
+        """Update the flower plot."""
+        # Just replace the old figure with a new one.
+        self.create_figure()
+        return None
+    
 
     def on_ui_select_flower_change(self, attr, old, new):
         """The user changed the flower type."""
-        self.update()
+        self.create_figure()
         return None
-
-    def on_cds_selection_change(self, attr, old, new):
-        """The selected rows changed."""
-        if self.flower:
-            self.flower.set_selection(new)
-            self.flower.update_cds()
+    
+    def on_ui_multichoice_columns_change(self, attr, old, new):
+        """The user changed the petal columns."""
+        if self.is_reloading:
+            return None
+                
+        self.flower.fields = new
+        self.flower.update()
         return None
+    
 
-    def update(self):
-        """Creates and initializes the FlowerPlot."""
-        if self.ui_select_flower.value == "rose":
-            p = FlowerCurve()
-            p.curve = "rose"
-        elif self.ui_select_flower.value == "drop":
-            p = FlowerCurve()
-            p.curve = "drop"
-        else:
-            p = FlowerWedge()
+    def create_figure(self):
+        """Create the Bokeh figure showing the flower plot and replace
+        the current figure.
+        """
+        # Create the figure.
+        figure = bokeh.plotting.figure(
+            tools="reset,save,pan,wheel_zoom",
+            match_aspect=True,
+            sizing_mode="scale_both",
+            toolbar_location="above",
+            title="Flower"
+        )
+        figure.xaxis.visible = False
+        figure.yaxis.visible = False
+        figure.xgrid.visible = False
+        figure.ygrid.visible = False
 
-        # Only use scalar fields for the flower.
-        # :todo: Use a shared, "global" vertex multi-choice menu.
-        df = self.app.df[scalar_columns(self.app.df)]
+        # Create the flower.
+        flower_classes = {
+            "wedge": FlowerWedge,
+            "rose": FlowerRose,
+            "drop": FlowerDrop
+        }
+        flower_class = flower_classes[self.ui_select_flower.value]
 
-        p.set_df(df)
-        p.set_selection(self.app.cds.selected.indices)
-        p.update_cds()
-        p.create_figure()
-        
-        self.flower = p
-        self.layout_panel.children = [p.figure]
+        flower = flower_class(
+            source=self.app.cds,
+            fields=self.ui_multichoice_columns.value,
+            figure=figure,
+            center=(0.0, 0.0),
+            radius=1.0
+        )
+
+        # Done.
+        self.flower = flower
+        self.figure = figure
+        self.layout_panel.children = [figure]
         return None
