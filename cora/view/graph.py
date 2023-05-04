@@ -179,24 +179,34 @@ class GraphView(ViewBase):
         """
         columns = self.app.df_edges.columns
 
-        # Extract all prefixes.
-        prefixes = [column.rsplit(":", 1)[0] for column in columns]
+        # Deal with case sensitivity by working only on lower case names.
+        columns_lc = {column.lower(): column for column in columns}
 
+        # Split the columns into prefix and name.
+        prefixes_lc = [column_lc.rsplit(":", 1)[0] for column_lc in columns_lc.values()]
+        
         # Common column names (without prefix) for start and end columns
         # of edges.
-        names = [
+        names_lc = [
             ("source", "target"),
             ("start", "end"),
-            ("StartNode.id", "EndNode.id")
+            ("startnode.id", "endnode.id")
         ]
 
         # Try all pairs.
-        for prefix in prefixes:
-            for source, target in names:
-                source = f"{prefix}:{source}"
-                target = f"{prefix}:{target}"
-                if source in columns and target in columns:
-                    return (source, target)
+        for prefix_lc in prefixes_lc:
+            for source_lc, target_lc in names_lc:
+                prefixed_source_lc = f"{prefix_lc}:{source_lc}"
+                prefixed_target_lc = f"{prefix_lc}:{target_lc}"
+
+                if prefixed_source_lc not in columns_lc:
+                    continue
+                if prefixed_target_lc not in columns_lc:
+                    continue
+                    
+                source = columns_lc[source_lc]
+                target = columns_lc[target_lc]
+                return (source, target)
         return (None, None)
 
     def update_nx_graph(self):
