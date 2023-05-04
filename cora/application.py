@@ -183,14 +183,15 @@ class Application(object):
             "Histogram",
             "Scatter",
             "Map",
-            "Embedding"
+            "PCA",
+            "UMAP"
         ]
 
         #: Menu for selecting the view in the left panel.
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="Map", 
+            value="UMAP", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -397,10 +398,14 @@ class Application(object):
         if view_type == "Map":
             from cora.view.map import MapView
             return MapView(self)
+
+        if view_type == "UMAP":
+            from cora.view.umap import UMAPView
+            return UMAPView(self)
         
-        if view_type == "Embedding":
-            from cora.view.embedding import MLView
-            return MLView(self)
+        if view_type == "PCA":
+            from cora.view.pca import PCAView
+            return PCAView(self)
         return None
 
     # -- UI signals --
@@ -447,9 +452,10 @@ class Application(object):
     def on_ui_select_panel_left_change(self, attr, old, new):
         """The user wants to view another plot in the left panel."""
         view = self.create_view(new)
-        with view.begin_reload():
-            view.reload_df()
-            view.reload_cds()
+        if view is not None:
+            with view.begin_reload():
+                view.reload_df()
+                view.reload_cds()
 
         self.panel_left = view
         self.update_layout_sidebar()
@@ -459,9 +465,10 @@ class Application(object):
     def on_ui_select_panel_right_change(self, attr, old, new):
         """The user wants to view another plot in the right panel."""
         view = self.create_view(new)
-        with view.begin_reload():
-            view.reload_df()
-            view.reload_cds()
+        if view is not None:
+            with view.begin_reload():
+                view.reload_df()
+                view.reload_cds()
 
         self.panel_right = view
         self.update_layout_sidebar()
