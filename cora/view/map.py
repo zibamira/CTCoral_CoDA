@@ -203,7 +203,7 @@ class MapView(ViewBase):
         )
 
         pfigure.add_tile(
-            xyzservices.providers.OpenStreetMap.Mapnik, 
+            xyzservices.providers.Stamen.Terrain, 
             retina=True
         )
 
