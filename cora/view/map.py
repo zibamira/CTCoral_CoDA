@@ -196,7 +196,10 @@ class MapView(ViewBase):
             x_axis_label="Longitude",
             y_axis_type="mercator",
             y_axis_label="Latitude",
-            x_range=(-x_max, x_max)
+            x_range=(-x_max, x_max),
+            tooltips=[
+                ("index", "$index")
+            ]
         )
 
         pfigure.add_tile(

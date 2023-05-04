@@ -54,7 +54,6 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
     *   Refactor reloading for PCAView
     *   Refactor reloading for UMAPView
     *   Refactor reloading for EmbeddingView
-    *   Refactor reloading for MapView
     *   Refactor reloading for SPLOMView
 
 *   Finalize the watchdog interface in Amira
