@@ -190,7 +190,7 @@ class Application(object):
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="Flower", 
+            value="Map", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -280,7 +280,7 @@ class Application(object):
         self.is_reloading = False
         return None
 
-    def push_df_to_cds(self, vertex: bool, edge: bool, force: bool=False):
+    def push_df_to_cds(self, vertex: bool=False, edge: bool=False, force: bool=False):
         """Replaces the Bokeh ColumnDataSource with the data in the data frames.
         This will transmit the changed data to the client and trigger a render update.
 
