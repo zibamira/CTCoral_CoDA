@@ -51,9 +51,6 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
 
 *   Finalize the filesystem data provider
     *   Implement the selection mask output
-    *   Refactor reloading for PCAView
-    *   Refactor reloading for UMAPView
-    *   Refactor reloading for EmbeddingView
     *   Refactor reloading for SPLOMView
 
 *   Finalize the watchdog interface in Amira
@@ -103,6 +100,10 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
     Implement the Radius-Lifted center line trees.
 *   Isomorphic 2D Graph Layout\ 
     Use the Buddy-Angles to create an isomorphic as possible 2D graph layout of the Coral framework.
+*   Throttle/Debounce frequent updates\
+    The histogram update in the SPLOM view must not necessarily be interactive, a short delay is ok.
+*   Propagate new columns\
+    When a view, e.g. PCA or UMAP, add a new column to the dataframe, signalize the addition to other components so that they can update their UI.
     
 
 ## Rationale
