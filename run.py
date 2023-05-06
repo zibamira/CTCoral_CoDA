@@ -27,10 +27,10 @@ parser.add_argument(
     "--edge", action="extend", type=pathlib.Path, nargs="*"
 )
 parser.add_argument(
-    "--vertex-field", action="store", type=pathlib.Path
+    "--vertex-selection", action="store", type=pathlib.Path
 )
 parser.add_argument(
-    "--edge-field", action="store", type=pathlib.Path
+    "--edge-selection", action="store", type=pathlib.Path
 )
 parser.add_argument(
     "--dev-random", action="store_const", const=True,
@@ -59,10 +59,9 @@ else:
         provider.add_vertex_csv(path)
     for path in args.edge:
         provider.add_edge_csv(path)
-    if args.vertex_field is not None:
-        provider.set_vertex_field(args.vertex_field)
-    if args.edge_field is not None:
-        provider.set_edge_field(args.edge_field)
+
+    provider.path_vertex_selection = args.vertex_selection
+    provider.path_edge_selection = args.edge_selection
 
 
 def cora_doc(doc):

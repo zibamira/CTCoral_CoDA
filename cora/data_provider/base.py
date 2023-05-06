@@ -63,6 +63,24 @@ class DataProvider(object):
         """
         return None
 
+    def write_vertex_selection(self, indices):
+        """This method is called by the cora application when the current vertex
+        selection changed. 
+        
+        Subclasses may override this method and store the current selection 
+        at some place, e.g. in a JSON or CSV file.
+        """
+        return None
+    
+    def write_edge_selection(self, indices):
+        """This method is called by the cora application when the current edge
+        selection changed.
+        
+        Subclasses may override this method and store the current selection
+        at some place, e.g. in a JSON or CSV file.
+        """
+        return None
+
     def notify_change(self):
         """Notifies Cora that the data changed and needs to be reloaded."""
         self.on_change.send(self)

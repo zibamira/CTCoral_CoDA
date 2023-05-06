@@ -72,13 +72,9 @@ class DirectoryHandle(object):
 class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandler):
     """This data provider merges several spreadsheets and watches their modification.
 
-    Additionally, it also accepts the path to a label field corresponding to the
-    vertices and edges.
-
-    The current selection indices are made available in two spreadsheets, one for the
-    vertex and one for the edge data. Similarly, the selections are made available as 
-    masks for the label fields.
-
+    Additionally, it also accepts the path to a vertex and edge selection csv file
+    in which the currently selected indices are stored and updated continously.
+    
     The provider will block reloading if not *all* resources are available. So as long
     as a single input has not been created yet or is missing, a reload will not happen.
     Similarly, the reload button is disabled when a resource was removed from the filesystem
@@ -102,19 +98,17 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
         #: All file handles corresponding to edge data.
         self.edge_handles: Set[FileHandle] = set()
-
-        #: The file handle corresponding to the label field.
-        self.vertex_field_handle: Optional[FileHandle] = None
-
-        #: The file handle corresponding to the edge label field.
-        self.edge_field_handle: Optional[FileHandle] = None
         
 
-        #: Output path for the label field mask.
-        self.path_label_field_mask: Optional[pathlib.Path] = None
+        #: Output path for the label field selection table. This table
+        #: contains a single column with boolean values indicating wheter
+        #: the vertex is currently selected or not.
+        self.path_vertex_selection: Optional[pathlib.Path] = None
 
         #: Output path for the edge field mask.
-        self.path_label_field_edges_mask: Optional[pathlib.Path] = None
+        #: This table contains a single column with boolean values indicating
+        #: wheter the edge is currently selected or not.
+        self.path_edge_selection: Optional[pathlib.Path] = None
 
 
         #: Watchdog watching for file modifications.
@@ -165,51 +159,6 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         
         self.watch(info)
         return None
-
-    def set_vertex_field(self, path: pathlib.Path):
-        """Sets the path to the vertex field to the given file."""
-        assert path not in self.file_handles
-        assert path not in self.directory_handles
-
-        path = path.absolute()
-        prefix = "vertex_field"
-
-        info = FileHandle(
-            path=path,
-            prefix=prefix,
-            dirty=True,
-            data=None,
-            observed_watch=None
-        )
-
-        self.file_handles[path] = info
-        self.vertex_field_handle = info
-
-        self.watch(info)
-        return None
-
-    def set_edge_field(self, path: pathlib.Path):
-        """Sets the path to the edge field to the given file."""
-        assert path not in self.file_handles
-        assert path not in self.directory_handles
-
-        path = path.absolute()
-        prefix = "edge_field"
-
-        info = FileHandle(
-            path=path,
-            prefix=prefix,
-            dirty=True,
-            data=None,
-            observed_watch=None
-        )
-
-        self.file_handles[path] = info
-        self.edge_field_handle = info
-
-        self.watch(info)
-        return None
-
 
     # -- Watchdog--
 
@@ -364,36 +313,58 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
             self.df_edges = pd.concat(dfs, axis="columns")
         return None
 
-    def reload_vertex_field(self):
-        """Reload the vertex field."""
-        info = self.vertex_field_handle
-        if info is None:
-            return None
-
-        if not info.path.exists():
-            info.data = None
-            info.dirty = True
-        elif info.dirty:
-            info.data = np.load(info.path, mmap_mode="r")
-        return None
-
-    def reload_edge_field(self):
-        """Reload the edge field."""
-        info = self.edge_field_handle
-        if info is None:
-            return None
-
-        if not info.path.exists():
-            info.data = None
-            info.dirty = True
-        elif info.dirty:
-            info.data = np.load(info.path, mmap_mode="r")
-        return None
-
     def reload(self):
         """Reloads and merges all paths marked as dirty."""
         self.reload_vertex()
         self.reload_edge()
-        self.reload_vertex_field()
-        self.reload_edge_field()
+        return None
+    
+    def write_vertex_selection(self, indices):
+        """Stores the currently vertex selection as CSV formatted file
+        at :attr:`path_vertex_selection`.
+        """
+        print("write vertex selection")
+        if not self.path_vertex_selection:
+            return None
+        
+        # Create the selection mask (column).
+        nvertices = len(self.df.index)
+        if indices:
+            selected = np.full(nvertices, 0, dtype=int)
+            selected[indices] = 1
+        else:
+            selected = np.full(nvertices, 1, dtype=int)
+        
+        # Put everything into a dataframe.
+        df = pd.DataFrame(data={"selected": selected}, copy=False)
+
+        # Save the CSV with an extra Amira header.
+        with open(self.path_vertex_selection, "w") as file:
+            file.write("\"CORA vertex selection\"\n")
+            df.to_csv(file, sep=",", header=True, index=False)
+        return None
+    
+    def write_edge_selection(self, indices):
+        """Stores the currently edge selection as CSV formatted file
+        at :attr:`path_edge_selection`.
+        """
+        print("write edge selection")
+        if not self.path_edge_selection:
+            return None
+        
+        # Create the selection mask (column).
+        nvertices = len(self.df.index)
+        if indices:
+            selected = np.full(nvertices, 0, dtype=int)
+            selected[indices] = 1
+        else:
+            selected = np.full(nvertices, 1, dtype=int)
+        
+        # Put everything into a dataframe.
+        df = pd.DataFrame(data={"selected": selected}, copy=False)
+
+        # Save the CSV with an extra Amira header.
+        with open(self.path_edge_selection, "w") as file:
+            file.write("\"CORA edge selection\"\n")
+            df.to_csv(file, sep=",", header=True, index=False)
         return None

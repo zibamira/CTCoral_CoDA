@@ -83,12 +83,12 @@ class Application(object):
 
         #: The Bokeh ColumnDataSource wrapping the DataFrame.
         self.cds = bokeh.models.ColumnDataSource(self.df)
-        # self.cds.selected.on_change("indices", self.on_cds_selection_change)
+        self.cds.selected.on_change("indices", self.on_cds_selection_change)
 
         #: The Bokeh ColumnDataSource wrapping the edges DataFrame.
         self.cds_edges = bokeh.models.ColumnDataSource(self.df_edges)
-        # self.cds_edges.selected.on_change("indices", self.on_cds_edges_selection_change)
-        # self.cds_edges.selected.on_change("multiline_indices", self.on_cds_edges_selection_change)
+        self.cds_edges.selected.on_change("indices", self.on_cds_edges_indices_change)
+        self.cds_edges.selected.on_change("multiline_indices", self.on_cds_edges_multiline_indices_change)
         
 
         # -- Glyph mapping --
@@ -191,7 +191,7 @@ class Application(object):
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="UMAP", 
+            value="Graph", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -475,3 +475,28 @@ class Application(object):
         self.update_layout()
         return None
 
+    def on_cds_selection_change(self, attr, old, new):
+        """Propagate the current selection to the data provider."""
+        if self.is_reloading:
+            return None
+        
+        self.data_provider.write_vertex_selection(new)
+        return None
+    
+    def on_cds_edges_indices_change(self, attr, old, new):
+        """Propagate the current selection to the data provider."""
+        if self.is_reloading:
+            return None
+        
+        self.data_provider.write_edge_selection(new)
+        return None
+    
+    def on_cds_edges_multiline_indices_change(self, attr, old, new):
+        """Propagate the current selection to the data provider."""
+        print(new)
+        if self.is_reloading:
+            return None
+        
+        new = [int(key) for key in new]
+        self.data_provider.write_edge_selection(new)
+        return None

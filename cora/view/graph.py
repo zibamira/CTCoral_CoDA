@@ -67,8 +67,7 @@ class GraphView(ViewBase):
         self.ui_select_graph_layout = bokeh.models.Select(
             title="Layout Algorithm",
             options=self.LAYOUT_ALGORITHMS,
-            sizing_mode="stretch_width",
-            value="spring"
+            sizing_mode="stretch_width"
         )
         self.ui_select_graph_layout.on_change(
             "value", self.on_ui_select_graph_layout_change
@@ -145,6 +144,15 @@ class GraphView(ViewBase):
         # Update the internal nx graph and recompute the layout if the graph
         # changed.
         changed = self.update_nx_graph()
+
+        # Choose the default layout if this is the first reload.
+        if self.nx_graph and self.ui_select_graph_layout.value not in self.LAYOUT_ALGORITHMS:
+            if nx.is_tree(self.nx_graph):
+                self.ui_select_graph_layout.value = "twopi"
+            else:
+                self.ui_select_graph_layout.value = "spring"
+                
+        # Recompute the layout.
         if changed:
             self.update_graph_layout()
         return None    
@@ -204,8 +212,8 @@ class GraphView(ViewBase):
                 if prefixed_target_lc not in columns_lc:
                     continue
                     
-                source = columns_lc[source_lc]
-                target = columns_lc[target_lc]
+                source = columns_lc[prefixed_source_lc]
+                target = columns_lc[prefixed_target_lc]
                 return (source, target)
         return (None, None)
 
