@@ -97,10 +97,9 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
 *   Isomorphic 2D Graph Layout\ 
     Use the Buddy-Angles to create an isomorphic as possible 2D graph layout of the Coral framework.
 *   Throttle/Debounce frequent updates\
-    The histogram update in the SPLOM view must not necessarily be interactive, a short delay is ok.
+    The histogram update in the SPLOM view must not necessarily be interactive, a short delay is ok. Similarly, the aggreagation in the FlowerView component may also be throttled. I think the best approach would be to create a global worker queue class (background thread) and a work queue. The views can push new jobs onto the worker and the worker schedules the "done" callback in the io loop. This worker could and should be used by the PCA, UMAP, Histogram and Flower views.
 *   Propagate new columns\
     When a view, e.g. PCA or UMAP, add a new column to the dataframe, signalize the addition to other components so that they can update their UI.
-    
 
 ## Rationale
 
