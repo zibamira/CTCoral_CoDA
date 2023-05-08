@@ -205,7 +205,7 @@ class HistogramPlot(object):
             hist = hist2d[:, ifactor]
             top = bottom + hist
             color = self.factor_map.glyph_map[factor]
-            ratio = np.where(hist_all > 0, hist/hist_all, 0.0)
+            ratio = np.divide(hist, hist_all, out=np.zeros_like(hist), where=hist_all != 0)
 
             data["left"].extend(left)
             data["right"].extend(right)
@@ -247,7 +247,7 @@ class HistogramPlot(object):
             top = bottom
             bottom = top - hist
             color = self.factor_map.glyph_map[factor]
-            ratio = np.where(hist_all > 0, hist/hist_all, 0.0)
+            ratio = np.divide(hist, hist_all, out=np.zeros_like(hist), where=hist_all != 0)
 
             data["left"].extend(left)
             data["right"].extend(right)
