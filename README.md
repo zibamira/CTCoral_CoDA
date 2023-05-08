@@ -49,8 +49,6 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
 
 # Future
 
-*   Natsort all columns.
-
 *   Finalize the watchdog interface in Amira
     *   Make sure the reload works
     *   Use dummy objects to delay the first read

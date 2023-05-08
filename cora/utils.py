@@ -27,8 +27,10 @@ __all__ = [
 
 
 def data_columns(df):
-    """Returns all data columns in the data frame."""
-    return [name for name in df.columns if not name.startswith("cora:")]
+    """Returns all data columns in the data frame, sorted by their names
+    in natural order.
+    """
+    return list(natsorted(name for name in df.columns if not name.startswith("cora:")))
 
 
 def scalar_columns(df, allow_nan=True):
