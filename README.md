@@ -49,9 +49,7 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
 
 # Future
 
-*   Finalize the filesystem data provider
-    *   Implement the selection mask output
-    *   Refactor reloading for SPLOMView
+*   Natsort all columns.
 
 *   Finalize the watchdog interface in Amira
     *   Make sure the reload works

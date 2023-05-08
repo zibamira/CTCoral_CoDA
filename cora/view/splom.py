@@ -16,10 +16,13 @@ import bokeh.plotting
 import bokeh.models
 import bokeh.layouts
 
+import numpy as np
+
 from cora.application import Application
 from cora.view.base import ViewBase
 from cora.view.histogram import HistogramPlot
-from cora.utils import FactorMap, scalar_columns
+import cora.utils
+from cora.utils import FactorMap
 
 
 __all__ = [
@@ -34,8 +37,6 @@ class SplomView(ViewBase):
     cross-tabular histgorams.
     """
 
-    # TODO: I think most of the shared ranges should be part of the cora application
-    #       instance so that it can be synchronized globally, e.g. the ranges.
     # TODO: Implement the gridplot using "sizing_mode=stretch_both". This results
     #       in a responsive layout. However, in Bokeh version 3.1.0. the responsive
     #       layout also allocated the same space for the smaller dummy axis plots,
@@ -47,10 +48,8 @@ class SplomView(ViewBase):
         #: Menu for selecting the columns that should be visible in the SPLOM.
         self.ui_multichoice_columns = bokeh.models.MultiChoice(
             title="Columns",
-            options=scalar_columns(self.app.df),
             sizing_mode="stretch_width"
         )
-        self.ui_multichoice_columns.value = self.ui_multichoice_columns.options[:3]
         self.ui_multichoice_columns.on_change("value", self.on_multichoice_columns_change)
 
         #: The width and height of each plot in the SPLOM.
@@ -90,9 +89,25 @@ class SplomView(ViewBase):
         self.layout_sidebar.children = [
             self.ui_multichoice_columns
         ]
-        
+        return None
+    
+
+    def reload_df(self):
+        """Reload the dataframe."""
+        columns = cora.utils.scalar_columns(self.app.df)
+
+        selection = self.ui_multichoice_columns.value
+        selection = [column for column in selection if column in columns]
+
+        self.ui_multichoice_columns.options = columns
+        self.ui_multichoice_columns.value = selection
+        return None
+
+    def reload_cds(self):
+        """Recreate the SPLOM as soon as all data is available."""
         self.update_layout()
         return None
+
     
     def create_range(self, column_name: str):
         """Creates the x and y range for the column with the name *column_name*.
@@ -105,12 +120,15 @@ class SplomView(ViewBase):
         values = self.app.df[column_name]
         vmin = values.min()
         vmax = values.max()
-
+        if vmin == vmax:
+            vmin -= 1.0
+            vmax += 1.0
+        
         x_range = bokeh.models.Range1d(
-            vmin, vmax, bounds=(vmin, vmax), name=f"x_range_{column_name}"
+            vmin, vmax, name=f"x_range_{column_name}"
         )
         y_range = bokeh.models.Range1d(
-            vmin, vmax, bounds=(vmin, vmax), name=f"y_range_{column_name}"
+            vmin, vmax, name=f"y_range_{column_name}"
         )
 
         self.x_ranges[column_name] = x_range
@@ -313,7 +331,10 @@ class SplomView(ViewBase):
         ]
         return None
     
+
     def on_multichoice_columns_change(self, attr, old, new):
         """The user removed/added a column from/to the plot."""
+        if self.is_reloading:
+            return None
         self.update_layout()
         return None
