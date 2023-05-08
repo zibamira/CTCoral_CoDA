@@ -37,11 +37,6 @@ class SplomView(ViewBase):
     cross-tabular histgorams.
     """
 
-    # TODO: Implement the gridplot using "sizing_mode=stretch_both". This results
-    #       in a responsive layout. However, in Bokeh version 3.1.0. the responsive
-    #       layout also allocated the same space for the smaller dummy axis plots,
-    #       resulting in wasted screen space. 
-
     def __init__(self, app: Application):
         super().__init__(app)
         
@@ -65,18 +60,6 @@ class SplomView(ViewBase):
         #: The shared y range for each column in the data frame.
         self.y_ranges: Dict[str, bokeh.models.Range1d] = dict()
         
-        #: Small figures which only displays the x-axis. These figures
-        #: are placed at the top of the SPLOM in each column.
-        #:
-        #:      column name -> x axis dummy plot
-        self.x_axes_plots: Dict[str, bokeh.models.Model] = dict()
-
-        #: Small figures which only display the y-axes. These figures
-        #: are placed at the left side of the SPLOM in each row.
-        #:
-        #:      column name -> y axis dummy plot
-        self.y_axes_plots: Dict[str, bokeh.models.Model] = dict()
-
         #: The figures for each histogram plot.
         #:
         #:      column name -> histogram plot
@@ -135,59 +118,6 @@ class SplomView(ViewBase):
         self.y_ranges[column_name] = y_range
         return None
 
-    def create_axes_plots(self, column_name: str):
-        """Creates the axis "dummy" plots that only show an x or y axis
-        for the column with the name *column_name*.
-        """
-        if column_name in self.x_axes_plots:
-            return None
-
-        # Create the range if not yet done.
-        self.create_range(column_name)
-
-        # y axis
-        py = bokeh.plotting.figure(
-            width=60, 
-            height=self.width,
-            sizing_mode="fixed",
-            x_range=self.x_ranges[column_name], 
-            y_range=self.y_ranges[column_name],
-            y_axis_location="left", 
-            outline_line_color=None,
-            toolbar_location=None
-        )
-        py.scatter([], [])
-        py.xaxis.visible = False
-        py.xgrid.visible = False
-        py.ygrid.visible = False
-
-        py.yaxis.axis_label = column_name
-        py.yaxis.ticker.desired_num_ticks = 4
-
-        self.y_axes_plots[column_name] = py
-
-        # x axis
-        px = bokeh.plotting.figure(
-            width=self.width,
-            height=60, 
-            x_range=self.x_ranges[column_name], 
-            y_range=self.y_ranges[column_name], 
-            x_axis_location="above", 
-            outline_line_color=None,
-            sizing_mode="fixed",
-            toolbar_location=None
-        )
-        px.scatter([], [])
-        px.yaxis.visible = False
-        px.xgrid.visible = False
-        px.ygrid.visible = False
-
-        px.xaxis.axis_label = column_name
-        px.xaxis.ticker.desired_num_ticks = 4
-
-        self.x_axes_plots[column_name] = px
-        return None
-
     def create_histogram(self, column_name):
         """Creates the histogram plot for the specified column."""
         if column_name in self.histogram_plots:
@@ -201,8 +131,12 @@ class SplomView(ViewBase):
         p = bokeh.plotting.figure(
             width=self.width,
             height=self.width,
-            sizing_mode="fixed",
+            sizing_mode="stretch_both",
             x_range=x_range,
+            x_axis_location="above", 
+            y_axis_location="left", 
+            x_axis_label=column_name,
+            y_axis_label=column_name,
             outline_line_color=None
         )
         p.xaxis.visible = False
@@ -216,6 +150,9 @@ class SplomView(ViewBase):
             factor_map=self.app.fmap_color,
             figure=p
         )
+
+        p.y_range.start = -1.05*phist.hist_max
+        p.y_range.end = 1.05*phist.hist_max
 
         self.histogram_plots[column_name] = phist
         return None
@@ -235,10 +172,13 @@ class SplomView(ViewBase):
         p = bokeh.plotting.figure(
             width=self.width,
             height=self.width,
-            sizing_mode="fixed",
-            syncable=True,
+            sizing_mode="stretch_both",
             x_range=self.x_ranges[column_name_x], 
             y_range=self.y_ranges[column_name_y],
+            x_axis_location="above", 
+            y_axis_location="left", 
+            x_axis_label=column_name_x,
+            y_axis_label=column_name_y,
             tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover",
             toolbar_location=None
         )
@@ -278,52 +218,48 @@ class SplomView(ViewBase):
         column_names_y = list(reversed(column_names_x))
         ncolumns = len(column_names_x)
 
-        # Nothing to do.
         if ncolumns == 0:
-            self.layout_panel.children = []
+            empty_splom_hint = bokeh.models.Div(
+                text="<strong>No columns selected to be viewed in the SPLOM.</strong>"
+            )
+            self.layout_panel.children = [empty_splom_hint]
             return None
 
         # We create the SPLOM row wise. Using Bokeh's gridplot directly
         # allocated too much space for the dummy x and
         rows = []
 
-        # x axis
-        row = [None]
-
-        for column_name in column_names_x:
-            self.create_axes_plots(column_name)
-            p = self.x_axes_plots[column_name]
-            row.append(p)
-
-        rows.append(row)
-
         # scatter plots + y axes
         for irow, column_name_y in enumerate(column_names_y):
             row = []
-
-            # y axis
-            self.create_axes_plots(column_name_y)
-            p = self.y_axes_plots[column_name_y]
-            row.append(p)
-
-            # scatter plots
             for icol, column_name_x in enumerate(column_names_x):
+
+                # Create the figure displayed in the cell (irow, col).
                 if irow == ncolumns - icol - 1:
                     self.create_histogram(column_name_x)
                     p = self.histogram_plots[column_name_x]
-                    row.append(p.figure)
+                    p = p.figure
                 elif irow < ncolumns - icol:
                     self.create_scatter(column_name_x, column_name_y)
                     p = self.scatter_plots[(column_name_x, column_name_y)]
-                    row.append(p)
                 else:
-                    row.append(None)
+                    p = None
+
+                # Show the axes only in the most upper and most left
+                # cells.
+                if p is not None:
+                    p.yaxis.visible = (icol == 0)
+                    p.xaxis.visible = (irow == 0)
+
+                row.append(p)
             rows.append(row)
+
 
         # Create the gridplot and update the layout.
         gridplot = bokeh.layouts.gridplot(
             children=rows, 
             toolbar_location="above", 
+            sizing_mode="stretch_both",
             merge_tools=True
         )
         self.layout_panel.children = [
