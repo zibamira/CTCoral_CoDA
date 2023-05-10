@@ -6,11 +6,9 @@ The files are watched for modifications so that Cora can be synchronized automat
 with changes occuring in the data.
 """
 
-from collections import namedtuple
 import pathlib
-from typing import Callable, Optional, List, Dict, Set, Any
+from typing import Optional, Dict, Set, Any
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 
@@ -136,6 +134,19 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         self.vertex_handles.add(info)
 
         self.watch(info)
+        self.notify_change()
+        return None
+
+    def remove_vertex_csv(self, path: pathlib.Path):
+        """Removes a file from the data provider."""
+        if path not in self.file_handles:
+            return None
+
+        self.unwatch(path)
+        info = self.file_handles.pop(path)
+        self.vertex_handles.remove(info)
+
+        self.notify_change()
         return None
 
     def add_edge_csv(self, path: pathlib.Path, prefix=""):
@@ -158,6 +169,19 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         self.edge_handles.add(info)
         
         self.watch(info)
+        self.notify_change()
+        return None
+
+    def remove_edge_csv(self, path: pathlib.Path):
+        """Removes a file from the data provider."""
+        if path not in self.file_handles:
+            return None
+
+        self.unwatch(path)
+        info = self.file_handles.pop(path)
+        self.edge_handles.remove(info)
+
+        self.notify_change()
         return None
 
     # -- Watchdog--
@@ -368,3 +392,4 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
             file.write("\"CORA edge selection\"\n")
             df.to_csv(file, sep=",", header=True, index=False)
         return None
+    

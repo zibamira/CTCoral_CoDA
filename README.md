@@ -49,11 +49,6 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
 
 # Future
 
-*   Finalize the watchdog interface in Amira
-    *   Make sure the reload works
-    *   Use dummy objects to delay the first read
-*   Check if the synchronization works
-
 *   Fix the segmentation fault in the SaM shortest path computation
 
 *   Fit a parabola curve to the Coral points clouds

@@ -18,50 +18,81 @@ import cora.application
 import cora.data_provider
 
 
-# Create the argument parser.
+# Create the parser.
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--vertex", action="extend", type=pathlib.Path, nargs="*"
+subparsers = parser.add_subparsers(
+    dest="data_provider", required=True
 )
-parser.add_argument(
-    "--edge", action="extend", type=pathlib.Path, nargs="*"
-)
-parser.add_argument(
-    "--vertex-selection", action="store", type=pathlib.Path
-)
-parser.add_argument(
-    "--edge-selection", action="store", type=pathlib.Path
-)
-parser.add_argument(
-    "--dev-random", action="store_const", const=True,
-    help="Ignore the provided files and use random test data as input."
-)
-parser.add_argument(
-    "--preset", action="store", choices=["corals"],
-    help="Launch Cora using a preset for the settings."
-)
+
 parser.add_argument(
     "--start-browser", action="store_const", const=True,
     help="Open a new tab in the browser with cora."
 )
+
+# Create the parser for the filesystem provider. This CLI takes
+# explicit paths for all input and output files.
+fs_parser = subparsers.add_parser(
+    "filesystem", 
+    help="A data provider using CSV spreadsheets in the local filesystem."
+)
+fs_parser.add_argument(
+    "--vertex", action="extend", type=pathlib.Path, nargs="*",
+    help="Path to a CSV spreadsheet containing vertex data."
+)
+fs_parser.add_argument(
+    "--edge", action="extend", type=pathlib.Path, nargs="*",
+    help="Path to a CSV spreadsheet containing edge data."
+)
+fs_parser.add_argument(
+    "--vertex-selection", action="store", type=pathlib.Path,
+    help="Path to the CSV file Cora will write the current vertex selection to."
+)
+fs_parser.add_argument(
+    "--edge-selection", action="store", type=pathlib.Path,
+    help="Path to the CSV file Cora will write the current edge selection to."
+)
+
+# Create a parser for the development, random data provider.
+rnd_parser = subparsers.add_parser(
+    name="random",
+    help="Ignore the provided files and use random test data as input."
+)
+
+# Create a parser for the Amira data provider.
+amira_parser = subparsers.add_parser(
+    name="amira",
+    help=(
+        "Use a shared directory linked to an active Amira project. "
+        "This data provider integrates with the hxcora package."
+    )
+)
+amira_parser.add_argument(
+    "directory", action="store", type=pathlib.Path,
+    help="Path to the directory shared with Amira."
+)
+
+# Parse the arguments.
 args = parser.parse_args()
 
-
-# Use random test data.
-if args.dev_random:
+# Setup the selected data provider.
+if args.data_provider == "random":
     provider = cora.data_provider.RandomDataProvider()
-
-# Create the FileSystem data provider using the input
-# from the argument parser.
-else:
+elif args.data_provider == "filesystem":
     provider = cora.data_provider.FilesystemDataProvider()
-    for path in args.vertex:
-        provider.add_vertex_csv(path)
-    for path in args.edge:
-        provider.add_edge_csv(path)
+    if args.vertex:
+        for path in args.vertex:
+            provider.add_vertex_csv(path)
+    if args.edge:
+        for path in args.edge:
+            provider.add_edge_csv(path)
 
     provider.path_vertex_selection = args.vertex_selection
     provider.path_edge_selection = args.edge_selection
+elif args.data_provider == "amira":
+    provider = cora.data_provider.AmiraDataProvider(args.directory)
+else:
+    parser.print_help()
+    exit(1)
 
 
 def cora_doc(doc):

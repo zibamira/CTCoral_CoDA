@@ -6,27 +6,13 @@ the interaction with Amira smoother and use of the *hxipc* package.
 """
 
 import pathlib
+import re
 
-import networkx as nx
-import numpy as np
-import pandas as pd
+import watchdog
+import watchdog.observers
+import watchdog.events
 
-from cora.data_provider.base import DataProvider
-
-
-# Try to import the Amira linking package.
-# :todo: Remove the local import and install the Python pacakge
-#:       in the local virtual environment once everything works.
-import sys
-sys.path.insert(1, "/srv/public/bschmitt/py_ipc")
-del sys
-try:
-    import hxipc as amira
-    import hxipc.data
-
-    has_amira = True
-except ImportError:
-    has_amira = False
+from cora.data_provider.filesystem import FilesystemDataProvider
 
 
 __all__ = [
@@ -34,92 +20,72 @@ __all__ = [
 ]
 
 
-class AmiraDataProvider(DataProvider):
-    """A data provider linked with an Amira application.
+class AmiraDataProvider(FilesystemDataProvider):
+    """A simplified file system data provider that is tuned 
+    to the Amira HxCora interface.
     
-    This provider looks for the following Amira *hxipc* meta files in the
-    :attr:`data_dir` directory:
+    The provider watches a single directory and adds csv spreadsheets
+    to Cora based on filename conventions.
 
-    *   :file:`label_analysis.json`
-    *   :file:`label_field.json`
-    *   :file:`spatialgraph.json`
+    *   Filenames matching ``vertex_*.csv`` are treated as vertex data.
+    *   Filenames matching ``edge_*.csv`` are treated as edge data.
 
-    :todo: Implement this data provider.
+    The current Cora selection is stored in ``cora_vertex_selection.csv``
+    and ``cora_edge_selection.csv``.
     """
 
-    def __init__(self, data_dir: pathlib.Path):
-        """ """
+    re_vertex_csv = re.compile("vertex_(?P<prefix>.*).csv")
+    re_edge_csv = re.compile("edge_(?P<prefix>.*).csv")
+
+    def __init__(self, amira_cora_directory = pathlib.Path):
         super().__init__()
 
-        #: The data directory containing the Amira IPC information
-        #: files.
-        self.data_dir = data_dir
+        #: The shared directory between Amira and Cora.
+        self.amira_cora_directory = amira_cora_directory
+        self.watch_directory(amira_cora_directory)
 
-        self.ipc_label_analysis = amira.data.spreadsheet(
-            data_dir / "label_analysis.json", 
-            mode="r", 
-            on_touched=self.notify_change,
-            lazy_read=True
-        )
-        self.ipc_label_field = amira.data.graph(
-            data_dir / "label_field.json", 
-            mode="r",
-            on_touched=self.notify_change,
-            lazy_read=True
-        )
-        self.ipc_spatialgraph = amira.data.array(
-            data_dir / "spatialgraph.json", 
-            mode="r",
-            on_touched=self.notify_change,
-            lazy_read=True
-        )        
-
-        # Create an output mask corresponding to the current Bokeh selection.
-        self.ipc_cora_selection = amira.data.array(
-            data_dir / "cora_selection_mask.npy", 
-            mode="w",
-            shape=self.ipc_segmentation.shape,
-            bounding_box=self.ipc_segmentation.bounding_box
-        )
+        # Perform an initial search.
+        for path in self.amira_cora_directory.iterdir():
+            self.try_add_vertex(path)
+            self.try_add_edge(path)
         return None
 
-    def reload(self):
-        """Reloads and aggregates the Amira input."""
-        # Wait until all resources are available.
-        if not self.ipc_label_analysis.exists():
+
+    def try_add_vertex(self, path: pathlib.Path):
+        """Checks if the path points to a vertex spreadsheet and adds it."""
+        if not path.is_file():
             return None
-        if not self.ipc_label_field.exists():
-            return None
-        if not self.ipc_spatialgraph.exists():
-            return None
-
-        # Reload if necessary.
-        if self.ipc_label_analysis.is_dirty():
-            print("Reloading features.")
-            self.ipc_label_analysis.read()
-
-        if self.ipc_label_field.is_dirty():
-            print("Reloading segmentation.")
-            self.ipc_segmentation.read()
-
-        if self.ipc_spatialgraph.is_dirty():
-            print("Reloading graph.")
-            self.ipc_spatialgraph.read()
-
-        # Aggregate the features from the features spreadsheet 
-        # and the spatial graph.
-        df_label_analysis = self.ipc_label_analysis.df
-        df_spatialgraph_vertices = self.ipc_spatialgraph.df_vertices
-        df_spatialgraph_edges = self.ipc_spatialgraph.df_edges
-
-        self.df = pd.merge(
-            left=df_label_analysis.add_prefix("label_analysis:"), 
-            left_on="label_analysis:index",
-            right=df_spatialgraph_vertices.add_prefix("spatialgraph:"), 
-            right_on="spatialgraph:label",
-            copy=False, 
-            how="left", 
-            validate="one_to_one",
-        )
-        self.df_edges = df_spatialgraph_edges
+        
+        m = self.re_vertex_csv.match(path.name)
+        if m is not None:
+            self.add_vertex_csv(path, prefix=m.group("prefix"))
         return None
+
+    def try_add_edge(self, path: pathlib.Path):
+        """Checks if the path points to an edge spreadsheet and adds it."""
+        if not path.is_file():
+            return None
+        
+        m = self.re_edge_csv.match(path.name)
+        if m is not None:
+            self.add_edge_csv(path, prefix=m.group("prefix"))
+        return None
+    
+
+    def on_created(self, event: watchdog.events.FileSystemEvent):
+        """Check if a new vertex or edge spreadsheet has been created
+        and load it eventually.
+        """
+        src_path = pathlib.Path(event.src_path).absolute()
+
+        self.try_add_vertex(src_path)
+        self.try_add_edge(src_path)
+        return super().on_created(event)
+    
+    def on_deleted(self, event: watchdog.events.FileSystemEvent):
+        """Check if a vertex or edge spreadsheet has been removed."""
+        src_path = pathlib.Path(event.src_path).absolute()
+
+        self.remove_vertex_csv(src_path)
+        self.remove_edge_csv(src_path)
+        return super().on_deleted(event)
