@@ -44,6 +44,10 @@ class AmiraDataProvider(FilesystemDataProvider):
         self.amira_cora_directory = amira_cora_directory
         self.watch_directory(amira_cora_directory)
 
+        # Set the default selection paths.
+        self.path_edge_selection = amira_cora_directory / "cora_edge_selection.csv"
+        self.path_vertex_selection = amira_cora_directory / "cora_vertex_selection.csv"
+
         # Perform an initial search.
         for path in self.amira_cora_directory.iterdir():
             self.try_add_vertex(path)

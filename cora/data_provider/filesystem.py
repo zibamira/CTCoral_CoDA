@@ -142,9 +142,13 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         if path not in self.file_handles:
             return None
 
-        self.unwatch(path)
-        info = self.file_handles.pop(path)
+        info = self.file_handles[path]
+        if info not in self.vertex_handles:
+            return None
+
+        self.unwatch(info)
         self.vertex_handles.remove(info)
+        self.file_handles.pop(path)
 
         self.notify_change()
         return None
@@ -177,9 +181,13 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         if path not in self.file_handles:
             return None
 
-        self.unwatch(path)
-        info = self.file_handles.pop(path)
+        info = self.file_handles[path]
+        if info not in self.edge_handles:
+            return None
+
+        self.unwatch(info)
         self.edge_handles.remove(info)
+        self.file_handles.pop(path)
 
         self.notify_change()
         return None
