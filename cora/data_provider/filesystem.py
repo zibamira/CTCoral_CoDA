@@ -355,7 +355,6 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         """Stores the currently vertex selection as CSV formatted file
         at :attr:`path_vertex_selection`.
         """
-        print("write vertex selection")
         if not self.path_vertex_selection:
             return None
         
@@ -380,17 +379,16 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         """Stores the currently edge selection as CSV formatted file
         at :attr:`path_edge_selection`.
         """
-        print("write edge selection")
         if not self.path_edge_selection:
             return None
         
         # Create the selection mask (column).
-        nvertices = len(self.df.index)
+        nedges = len(self.df_edges.index)
         if indices:
-            selected = np.full(nvertices, 0, dtype=int)
+            selected = np.full(nedges, 0, dtype=int)
             selected[indices] = 1
         else:
-            selected = np.full(nvertices, 1, dtype=int)
+            selected = np.full(nedges, 1, dtype=int)
         
         # Put everything into a dataframe.
         df = pd.DataFrame(data={"selected": selected}, copy=False)

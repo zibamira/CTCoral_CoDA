@@ -191,7 +191,7 @@ class Application(object):
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="SPLOM", 
+            value="Graph", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -279,6 +279,10 @@ class Application(object):
         # We are done.
         self.ui_button_reload.disabled = True
         self.is_reloading = False
+
+        # Propagate the (eventually) new selection again to the data providers.
+        self.data_provider.write_vertex_selection(self.cds.selected.indices)
+        self.data_provider.write_edge_selection(self.cds_edges.selected.indices)
         return None
 
     def push_df_to_cds(self, vertex: bool=False, edge: bool=False, force: bool=False):
