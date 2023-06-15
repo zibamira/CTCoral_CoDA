@@ -24,6 +24,35 @@ $ python3 run.py --vertex label_analysis.csv --edge adjacency_graph.csv --vertex
 ```
 Cora will attempt to reload the dataframes every time a modification occurs.
 
+## Amira
+
+Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy `.npy` files. Use the following modules to store your Amira data of interest automatic in an folder that is accessible by Cora.
+
+*   **HxCoraVertexData** \
+    Exports the attached Amira data object as *vertex* data.\
+    Suports *HxLabelAnalysis*, *HxSpreadSheet* and *HxSpatialGraph*.
+*   **HxCoraVertexDataFilter** \
+    Filters the attached Amira data object based on the current Bokeh vertex selection.\
+    Suports *HxLabelAnalysis*, *HxSpreadSheet* and *HxSpatialGraph*.
+*   **HxCoraEdgeData** \
+    Exports the attached Amira data object as *edge* data.\
+    Suuports *HxLabelAnalysis*, *HxSpreadSheet* and *HxSpatialGraph*.
+*   **HxCoraEdgeDataFilter** \
+    Filters the attached Amira data object based on the current Bokeh edge selection.\
+    Supports *HxSpatialGraph*.
+*   **HxCoraGraph**
+    Exports the attached Amira data object's edge *and* vertex attributes.\
+    Supports *HxSpatialGraph*.
+
+You must launch Cora *after* creating your first *Cora* module in Amira. Amira will create a temporary folder you can pass as command line argument to *Cora*.
+
+```bash
+$ ls /tmp | grep amira_cora_*
+amira_cora_Untitled_c8vTVF
+amira_cora_C1W_qz5qvv
+$ python3 run.py --start-browser amira /tmp/amira_cora_Untitled_c8vTVF/ 
+```
+
 ## Visualization
 
 *   Spreadsheet
@@ -35,45 +64,24 @@ Cora will attempt to reload the dataframes every time a modification occurs.
 *   Embedding
 *   Flower
 
-## Amira
-
-Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy `.npy` files. Use the following modules to store the output:
-
-*   HxSpreadsheet\
-    Export the spreadsheet as CSV file.
-*   HxUniformScalarField3, HxRegularScalarField3\
-    Export the field as `.npy` file.
-*   HxSpatialGraph\
-    Convert the spatial graph to a spreadsheet with the *HxSpatialGraphToSpreadSgeet* and store the three tables as CSV file. 
-    The `*_table` spreadsheet contains the edge information, the `*_node` spreadsheet contains additional vertex attributes and the `*_geometry` spreadsheet contains the 3D points on each edge. This spreadsheet is not relevant in Cora.
-
 # Future
-
-*   Fix the segmentation fault in the SaM shortest path computation
 
 *   Fit a parabola curve to the Coral points clouds
     *   Implement a plane fit first
     *   Refine the rotation and curve parameters with a Gauss-Newton solver
     *   Output the polynomial coefficients as features, i.e. f'' as curvature,
-        the path length and the mean distance to all points.
-    
+        the path length and the mean distance to all points.   
 *   Compute the buddy angle
     *   Compute the plane of the parabolas of the parent and child
     *   Compute the closest point of both parabolas, note that they
         don't need to intersect in general
     *   Compute the tangent of both parabolas at this point
     *   The angle between both tangents defines the buddy angle.
-
+*   Fix the segmentation fault in the SaM shortest path computation
 *   Compute the edge orientation
     *   Divide each label into "top" and "bottom"
     *   Check if the parabola intersects with the "top" or "bottom" 
         part of the parent.
-
-*   Throttle Callbacks
-
-*   Other applications
-    *   Jürgen could eventually use the PCA features for the element origin analysis
-        he showed me a year ago. Let's ask him.
 
 ## Nice To Have
 
