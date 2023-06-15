@@ -7,6 +7,7 @@ the interaction with Amira smoother and use of the *hxipc* package.
 
 import pathlib
 import re
+import tempfile
 
 import watchdog
 import watchdog.observers
@@ -53,6 +54,27 @@ class AmiraDataProvider(FilesystemDataProvider):
             self.try_add_vertex(path)
             self.try_add_edge(path)
         return None
+
+    @classmethod
+    def zero_conf_amira_cora_directory(self):
+        """Look for the latest directory in the system temporary directory,
+        e.g. `/tmp` for an `amira_cora_*` directory. The last one created
+        will be returned.
+
+        This zero-conf approach is a convention between the Amira package
+        *hxcora* and *py_cora*.
+        """
+        temp_dir = pathlib.Path(tempfile.gettempdir())
+        paths = [
+            path \
+            for path in temp_dir.glob("amira_cora_*")\
+            if path.is_dir()
+        ]
+        if not paths:
+            return None
+
+        path = max(paths, key=lambda path: path.stat().st_ctime)
+        return path
 
 
     def try_add_vertex(self, path: pathlib.Path):

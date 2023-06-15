@@ -191,7 +191,7 @@ class Application(object):
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="Graph", 
+            value="Scatter", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -331,9 +331,14 @@ class Application(object):
 
     def update_layout_sidebar(self):
         """Updates the layout of the sidebar."""
+        nvertices = len(self.df)
+        nedges = len(self.df_edges)
+
         children = [
             bokeh.models.Div(text="<strong>Cora</strong>", align="center"),
             self.ui_button_reload,
+            bokeh.models.Div(text=f"{nvertices} vertices", align="start"),
+            bokeh.models.Div(text=f"{nedges} edges", align="start"),
             bokeh.models.Div(text="<strong>Vertex Appearance</strong>", align="center"),
             self.ui_select_color,
             self.ui_select_marker,

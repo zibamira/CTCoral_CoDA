@@ -63,11 +63,14 @@ amira_parser = subparsers.add_parser(
     name="amira",
     help=(
         "Use a shared directory linked to an active Amira project. "
-        "This data provider integrates with the hxcora package."
+        "This data provider integrates with the hxcora package. "
+        "If no 'directory' is given, then CORA will look for the latest "
+        "Amira instance that created an Amira-Cora directory. This works "
+        "well if a single Amira instance is running."
     )
 )
 amira_parser.add_argument(
-    "directory", action="store", type=pathlib.Path,
+    "--directory", action="store", type=pathlib.Path,
     help="Path to the directory shared with Amira."
 )
 
@@ -77,6 +80,7 @@ args = parser.parse_args()
 # Setup the selected data provider.
 if args.data_provider == "random":
     provider = cora.data_provider.RandomDataProvider()
+
 elif args.data_provider == "filesystem":
     provider = cora.data_provider.FilesystemDataProvider()
     if args.vertex:
@@ -88,8 +92,16 @@ elif args.data_provider == "filesystem":
 
     provider.path_vertex_selection = args.vertex_selection
     provider.path_edge_selection = args.edge_selection
+
 elif args.data_provider == "amira":
+    if not args.directory:
+        args.directory = cora.data_provider.AmiraDataProvider.zero_conf_amira_cora_directory()
+        if not args.directory:
+            print("Could not find an active Amira instance.")
+            print("Use the '--directory' option to manually set a data directory.")
+            exit(1)
     provider = cora.data_provider.AmiraDataProvider(args.directory)
+    
 else:
     parser.print_help()
     exit(1)
