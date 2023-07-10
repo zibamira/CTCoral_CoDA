@@ -1,23 +1,27 @@
 [project]
 name = "cora"
 version = "0.0.0"
-description = "An interactive exploration tool for cold-water coral segmentation."
+description = "An interactive exploration tool for cold-water coral colonies."
 readme = "README.md"
 requires-python = ">= 3.9"
 classifiers = [
     "Programming Language :: Python :: 3"
 ]
 dependencies = [
+    "agraph",
+    "blinker",
     "bokeh",
-    "aiohttp",
-    "aiohttp-devtools",
-    "aiohttp-jinja2",
-    "numpy",
-    "scipy",
-    "pandas",
+    "matplotlib",
     "networkx",
+    "numpy",
+    "pandas",
+    "pydot",
+    "scipy",
+    "scikit-image",
+    "sklearn",
     "umap-learn",
-    "sklearn"
+    "xyzservices",
+    "watchdog"
 ]
 
 [project.urls]

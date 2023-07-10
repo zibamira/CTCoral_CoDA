@@ -19,7 +19,7 @@ import cora.data_provider
 
 
 # Create the parser.
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser("cora")
 subparsers = parser.add_subparsers(
     dest="data_provider", required=True
 )
