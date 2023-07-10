@@ -1,5 +1,6 @@
 # Cora - The Coral Explorer
 
+~ [Installation](#installation)
 ~ [Usage](#usage)
 ~ [Amira](#amira)
 ~ [Visualization](#visualization)
@@ -10,10 +11,30 @@
 
 This Python package implements *Cora - The Coral Explorer* application. An interactive link-and-brush tool with a real-time interface to Amira. It allows a fast visualization and exploration of cold-water corals, but doubles down as a general non-application specific explorative analysis tool.
 
+
+## Installation
+
+Cora requires some external tools and libraries which must be installed first.
+```property
+$ apt install python3 python3-pip git graphviz
+```
+
+The easiest way to get started is by installing Cora into your local Python environment. 
+```property
+$ pip3 install --user git+ssh://git@git.zib.de/bschmitt/py_cora.git
+```
+
+You can check if everything worked by starting Cora with some random data.
+```property
+$ python3 -m cora --start-browser random
+```
+
+
 ## Usage
 
-You just need a bunch of spreadsheets and otionally, some label fields. Cora distinguishes between two types of data:
+Cora was made for visualizing attributes defined on a graph. In a coral colony, the graph describes the framework. A coral would be a vertex and the connections describing ancestry the edges. A vertex could, for example, have a volume, length and weight attribute. Similarly, the edges may store the angle between parent and child, the length between both and the distances between them.
 
+Now, get your spreadsheets and perhaps some label fields ready. Cora distinguishes between two types of data:
 *   **Vertex Data**\
     This data is given for each sample of your data. Usually, it is just a row in a spreadsheet.
 *   **Edge Data**\
@@ -23,29 +44,33 @@ You can pass the spreadsheets as command line arguments and launch the browser d
 ```property
 $ python3 run.py --vertex label_analysis.csv --edge adjacency_graph.csv --vertex-field label_field.npy --start-browser
 ```
-Cora will attempt to reload the dataframes every time a modification occurs.
+
+Cora will attempt to reload the dataframes automatic every time a modification occurs. Eventually, you can reload manually by using the *Reload* button in the Browser UI.
+
 
 ## Amira
 
-Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy `.npy` files. Use the following modules to store your Amira data of interest automatic in an folder that is accessible by Cora.
+Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy `.npy` files with the *HxCora* package. Use the following modules to store your Amira data of interest automatic in an folder that is accessible by Cora.
 
-*   **HxCoraVertexData** \
+*   **Cora Vertex (HxCoraVertexData)** \
     Exports the attached Amira data object as *vertex* data.\
     Suports *HxLabelAnalysis*, *HxSpreadSheet* and *HxSpatialGraph*.
-*   **HxCoraVertexDataFilter** \
+*   **Cora Vertex Filter (HxCoraVertexDataFilter)** \
     Filters the attached Amira data object based on the current Bokeh vertex selection.\
     Suports *HxLabelAnalysis*, *HxSpreadSheet* and *HxSpatialGraph*.
-*   **HxCoraEdgeData** \
+*   **Cora Edge (HxCoraEdgeData)** \
     Exports the attached Amira data object as *edge* data.\
     Suuports *HxLabelAnalysis*, *HxSpreadSheet* and *HxSpatialGraph*.
-*   **HxCoraEdgeDataFilter** \
+*   **Cora Edge Filter (HxCoraEdgeDataFilter)** \
     Filters the attached Amira data object based on the current Bokeh edge selection.\
     Supports *HxSpatialGraph*.
-*   **HxCoraGraph**
+*   **Cora Graph (HxCoraGraph)**
     Exports the attached Amira data object's edge *and* vertex attributes.\
     Supports *HxSpatialGraph*.
 
-You must launch Cora *after* creating your first *Cora* module in Amira. Amira will create a temporary folder you can pass as command line argument to *Cora*.
+You can launch Cora either directly from within Amira by using the *Launch* button in one of these modules. 
+
+If that does not work, you can still connect manually. Amira will create a temporary folder where all exported spreadsheets are stored. This folder is visible in any of the *hxcora* modules. Copy the path and launch Cora:
 
 ```bash
 $ ls /tmp | grep amira_cora_*
@@ -56,16 +81,29 @@ $ python3 run.py --start-browser amira /tmp/amira_cora_Untitled_c8vTVF/
 
 ## Visualization
 
-*   Spreadsheet
-*   Histogram
-*   Scatter
-*   SPLOM
-*   Graph
-*   Map
-*   Embedding
-*   Flower
+Cora is based on the Bokeh visualization framework and provides an extensive, interactive linke and brushing UI. You can choose between several visualizations:
+
+*   **Spreadsheet**\
+    Shows the raw data in a spreadsheet.
+*   **Histogram**\
+    Aggregates the data in a histogram. 2D histograms are possible.
+*   **Scatter**\
+    Shows a scatter plot of two columns in the spreadsheets.
+*   **SPLOM (Scatter Plot Matrix)**\
+    Shows a matrix of scatter plots (subfigure) of multiple columns.
+*   **Graph**\
+    Computes a graph layout and shows it. This visualization requires the *graphviz* library. 
+*   **Map**\
+    If you vertex data contains *latitude* and *longitude* columns, then they are shown on a world map.
+*   **Embedding**\
+    The embedding view provides a principal-component analysis tool (PCA) and a *UMAP* tool for dimensionality reduction. You can choose which columns should be part of the reduction and visualize the result in e.g. a Scatter plot. The reduction coefficients are made available as standard vertex attributes.
+*   **Flower**\
+    One of the more beautiful plots. A *flower* plots aggregates some statistics of user selected columns, e.g. the minimum, maximum, mean median and standard variance. These statistics are displayed in visually appealing flower like glyphs.
+
 
 ## Nice To Have
+
+Some things did not make it into Cora yet. 
 
 *   Legends\
     Eventually add a legend for the color and marker factor maps. The rows in the 
@@ -77,8 +115,6 @@ $ python3 run.py --start-browser amira /tmp/amira_cora_Untitled_c8vTVF/
     Add a column to the data frame with the paths to images for each sample. The ImageView shows a grid with the thumbnails of the current selection and the thumbnails may also be attached to the hover tool.
 *   3D Point Clouds\
     This could help to identify clusters in 3D, not relying only on 2D scatter plots.
-*   Center Line Tree\
-    Implement the Radius-Lifted center line trees.
 *   Isomorphic 2D Graph Layout\ 
     Use the Buddy-Angles to create an isomorphic as possible 2D graph layout of the Coral framework.
 *   Throttle/Debounce frequent updates\
@@ -86,13 +122,14 @@ $ python3 run.py --start-browser amira /tmp/amira_cora_Untitled_c8vTVF/
 *   Propagate new columns\
     When a view, e.g. PCA or UMAP, add a new column to the dataframe, signalize the addition to other components so that they can update their UI.
 
+
 ## Rationale
 
 This section contains some design rationales and also why I decided against some features.
 
-*   **Filter Widgets**\
+*   **Why No Filter Widgets?**\
     Filter widgets usually work with range widgets or select menu. The range based filtering can be done with the BoxSelection tool and the select menu similarly in the scatter plot view. So it was not worth the trouble adding these widgets when they are not as easy to use. After all, the mouse tools allow for a better interactive approach.
-*   **Delayed Updates and Reload**\
+*   **Reloading and Delayed Update Process**\
     Handling the reloading in a stable manner is a bit tricky. The multi-stage process looks roughly like this:
     *   The data provider detects a change and notifies the Cora application.
     *   An automatic reload is triggered or the user is notified.
@@ -102,6 +139,7 @@ This section contains some design rationales and also why I decided against some
     *   The Bokeh column data sources are updated with the content in the *df* and *df_edges* data frames.
     *   The views update the plots to account for the new data if needed.
     *   The reload is done and Cora sets the *is_reloading* flag to *False*.
+
 
 ## ToDo
 
