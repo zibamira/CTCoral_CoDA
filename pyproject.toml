@@ -28,4 +28,9 @@ dependencies = [
 "Homepage" = "https://git.zib.de/bschmitt/py_cora.git"
 
 [tool.setuptools]
-packages = ["cora"]
+packages = [
+    "cora",
+    "cora.data_provider",
+    "cora.view"
+]
+

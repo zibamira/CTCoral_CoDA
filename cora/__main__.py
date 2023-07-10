@@ -8,10 +8,16 @@ Sets up the WSGI application and starts it.
 
 import argparse
 import pathlib
+import sys
 
 import bokeh
 import bokeh.plotting
 import bokeh.server.server
+
+
+# Fix the relative imports.
+this_dir = pathlib.Path(__file__).absolute().parent
+sys.path.append(this_dir.parent)
 
 import cora
 import cora.application
