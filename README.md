@@ -1,10 +1,11 @@
 # Cora - The Coral Explorer
 
-~ [Input](#input)
-~ [Visualization](#visualization)
-~ [ToDo](#todo)
 ~ [Usage](#usage)
+~ [Amira](#amira)
+~ [Visualization](#visualization)
+~ [Nice to Have](#nice-to-have)
 ~ [Rationale](#rationale)
+~ [ToDo](#todo)
 ~
 
 This Python package implements *Cora - The Coral Explorer* application. An interactive link-and-brush tool with a real-time interface to Amira. It allows a fast visualization and exploration of cold-water corals, but doubles down as a general non-application specific explorative analysis tool.
@@ -64,25 +65,6 @@ $ python3 run.py --start-browser amira /tmp/amira_cora_Untitled_c8vTVF/
 *   Embedding
 *   Flower
 
-# Future
-
-*   Fit a parabola curve to the Coral points clouds
-    *   Implement a plane fit first
-    *   Refine the rotation and curve parameters with a Gauss-Newton solver
-    *   Output the polynomial coefficients as features, i.e. f'' as curvature,
-        the path length and the mean distance to all points.   
-*   Compute the buddy angle
-    *   Compute the plane of the parabolas of the parent and child
-    *   Compute the closest point of both parabolas, note that they
-        don't need to intersect in general
-    *   Compute the tangent of both parabolas at this point
-    *   The angle between both tangents defines the buddy angle.
-*   Fix the segmentation fault in the SaM shortest path computation
-*   Compute the edge orientation
-    *   Divide each label into "top" and "bottom"
-    *   Check if the parabola intersects with the "top" or "bottom" 
-        part of the parent.
-
 ## Nice To Have
 
 *   Legends\
@@ -120,3 +102,17 @@ This section contains some design rationales and also why I decided against some
     *   The Bokeh column data sources are updated with the content in the *df* and *df_edges* data frames.
     *   The views update the plots to account for the new data if needed.
     *   The reload is done and Cora sets the *is_reloading* flag to *False*.
+
+## ToDo
+
+*   Rework the colormapping
+    *   Add pre-selected colormaps
+        *   viridis
+        *   magma
+        *   constant
+        *   plasma
+        *   blue-red
+        *   label8
+        *   label256
+    *   Add a slider for continuous colormaps.
+*   Implement edge colormaps
