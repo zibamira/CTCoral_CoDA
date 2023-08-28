@@ -109,6 +109,15 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         self.path_edge_selection: Optional[pathlib.Path] = None
 
 
+        #: Output path for the current vertex colormap. This table
+        #: contains five rows: xmin, red, green, blue and alpha.
+        self.path_vertex_colormap: Optional[pathlib.Path] = None
+
+        #: Output path for the current edge colormap. This table
+        #: contains five rows: xmin, red, green, blue and alpha.
+        self.path_edge_colormap: Optional[pathlib.Path] = None
+
+
         #: Watchdog watching for file modifications.
         self.observer = watchdog.observers.Observer()
         self.observer.start()
@@ -344,11 +353,23 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         if dfs:
             self.df_edges = pd.concat(dfs, axis="columns")
         return None
+    
+    def reload_edge_colormap(self):
+        """Reload the edge colormap from a CSV spreadsheet."""
+        # TODO: Implement this method.
+        return None
+
+    def reload_vertex_colormap(self):
+        """Reload the vertex colormap from a CSV spreadsheet."""
+        # TODO: Implement this method.
+        return None    
 
     def reload(self):
         """Reloads and merges all paths marked as dirty."""
         self.reload_vertex()
         self.reload_edge()
+        self.reload_edge_colormap()
+        self.reload_vertex_colormap()
         return None
     
     def write_vertex_selection(self, indices):
@@ -399,3 +420,22 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
             df.to_csv(file, sep=",", header=True, index=False)
         return None
     
+    def write_vertex_colormap(self):
+        """Stores the current vertex colormap as CSV formatted file
+        at :attr:`path_vertex_colormap.
+        """
+        if not self.path_vertex_colormap:
+            return None
+        
+        # TODO: Implement this method.
+        return None
+
+    def write_edge_colormap(self):
+        """Stores the current edge colormap as CSV formatted file
+        at :attr:`path_edge_colormap.
+        """
+        if not self.path_edge_colormap:
+            return None
+        
+        # TODO: Implement this method.
+        return None

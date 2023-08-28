@@ -49,6 +49,9 @@ class AmiraDataProvider(FilesystemDataProvider):
         self.path_edge_selection = amira_cora_directory / "cora_edge_selection.csv"
         self.path_vertex_selection = amira_cora_directory / "cora_vertex_selection.csv"
 
+        self.path_edge_colormap = amira_cora_directory / "cora_edge_colormap.csv"
+        self.path_vertex_colormap = amira_cora_directory / "cora_vertex_colormap.csv"
+
         # Perform an initial search.
         for path in self.amira_cora_directory.iterdir():
             self.try_add_vertex(path)
@@ -96,7 +99,7 @@ class AmiraDataProvider(FilesystemDataProvider):
         if m is not None:
             self.add_edge_csv(path, prefix=m.group("prefix"))
         return None
-    
+       
 
     def on_created(self, event: watchdog.events.FileSystemEvent):
         """Check if a new vertex or edge spreadsheet has been created

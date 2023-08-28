@@ -191,7 +191,7 @@ class Application(object):
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="Scatter", 
+            value="Graph", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
