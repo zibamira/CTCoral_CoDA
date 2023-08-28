@@ -191,7 +191,7 @@ class GraphView(ViewBase):
         columns_lc = {column.lower(): column for column in columns}
 
         # Split the columns into prefix and name.
-        prefixes_lc = [column_lc.rsplit(":", 1)[0] for column_lc in columns_lc.values()]
+        prefixes_lc = [column_lc.rsplit(":", 1)[0] for column_lc in columns_lc.keys()]
         
         # Common column names (without prefix) for start and end columns
         # of edges.
