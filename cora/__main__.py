@@ -34,6 +34,10 @@ parser.add_argument(
     "--start-browser", action="store_const", const=True,
     help="Open a new tab in the browser with cora."
 )
+parser.add_argument(
+    "--port", action="store", type=int, default=5006,
+    help="The server will listen on this port."
+)
 
 # Create the parser for the filesystem provider. This CLI takes
 # explicit paths for all input and output files.
@@ -125,7 +129,8 @@ def cora_doc(doc):
 
 server = bokeh.server.server.Server(
     {"/": cora_doc},
-    num_procs=1
+    num_procs=1,
+    port=args.port
 )
 server.start()
 
