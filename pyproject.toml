@@ -12,6 +12,7 @@ dependencies = [
     "blinker",
     "bokeh",
     "matplotlib",
+    "natsort",
     "networkx",
     "numpy",
     "pandas",
