@@ -32,7 +32,7 @@ __all__ = [
 class GraphView(ViewBase):
     """Plots the graph and links the vertices with other plots."""
 
-    # TODO: Only the "tap" tool works for selecting edges. All other
+    # XXX: Only the "tap" tool works for selecting edges. All other
     #       tools did not cause an event if a line was in the selection
     #       or crossed.
 
