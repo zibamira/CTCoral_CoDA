@@ -152,5 +152,6 @@ This section contains some design rationales and also why I decided against some
         *   blue-red
         *   label8
         *   label256
-    *   Add a slider for continuous colormaps.
-*   Implement edge colormaps
+    *   Add a range widget for continuous colormaps.
+    *   Export the "vertex_colormap" and "edge_colormap"
+*   Draw small shadows or boundaries to the glyphs.
