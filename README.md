@@ -143,15 +143,7 @@ This section contains some design rationales and also why I decided against some
 
 ## ToDo
 
-*   Rework the colormapping
-    *   Add pre-selected colormaps
-        *   viridis
-        *   magma
-        *   constant
-        *   plasma
-        *   blue-red
-        *   label8
-        *   label256
-    *   Add a range widget for continuous colormaps.
-    *   Export the "vertex_colormap" and "edge_colormap"
-*   Draw small shadows or boundaries to the glyphs.
+*   Implement selection tools for interesting queries.
+    *   All ancestors
+    *   All descendents
+    *   All nodes on the shortest path
