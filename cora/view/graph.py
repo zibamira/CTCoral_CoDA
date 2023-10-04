@@ -430,6 +430,7 @@ class GraphView(ViewBase):
             y="cora:graph:y",
             color="cora:color:glyph",
             marker="cora:marker:glyph",
+            line_color="gray",
             source=self.app.cds
         )
 

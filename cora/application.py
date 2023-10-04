@@ -110,7 +110,13 @@ class Application(object):
             df=self.df,
             cds=self.cds,
             column_name=None,
-            palette=["circle", "cross", "diamond", "asterisk"],
+            palette=[
+                "circle", "diamond", "hex", "triangle", "square", "plus", "star"
+                "circle_cross", "diamond_cross",
+                "circle_dot", "hex_dot", "triangle_dot", 
+                "circle_x", "triangle_pin",
+                "circle_y"
+            ],
             mode=FactorMap.Mode.REPEAT_LAST
         )
 
@@ -514,7 +520,6 @@ class Application(object):
     
     def on_cds_edges_multiline_indices_change(self, attr, old, new):
         """Propagate the current selection to the data provider."""
-        print(new)
         if self.is_reloading:
             return None
         

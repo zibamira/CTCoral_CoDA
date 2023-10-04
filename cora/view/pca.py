@@ -132,8 +132,6 @@ class PCAView(ViewBase):
             "fill_color": palette
         }
         self.cds_variance.data = data
-
-        print(variance)
         return None
     
 
@@ -177,7 +175,7 @@ class PCAView(ViewBase):
         p.xaxis.minor_tick_line_color = None
 
         p.quad(
-            line_color="white",
+            line_color="gray",
             fill_color="fill_color",
             source=self.cds_variance,
         )

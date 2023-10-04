@@ -108,6 +108,7 @@ class ScatterView(ViewBase):
             source=self.app.cds,
             color="cora:color:glyph",
             marker="cora:marker:glyph",
+            line_color="gray"
         )
 
         pscatter.glyph.size = self.app.ui_slider_size.value

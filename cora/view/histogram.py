@@ -279,7 +279,7 @@ class HistogramPlot(object):
             bottom="bottom",
             fill_color="grey",
             fill_alpha=0.1,
-            line_color="white",
+            line_color="gray",
             source=self.cds_all
         )
 
@@ -290,7 +290,7 @@ class HistogramPlot(object):
             top="top",
             bottom="bottom",
             fill_color="color",
-            line_color="white",
+            line_color="gray",
             source=self.cds_selected
         )        
 
@@ -302,7 +302,7 @@ class HistogramPlot(object):
             bottom="bottom",
             fill_color="color",
             fill_alpha=0.6,
-            line_color="white",
+            line_color="gray",
             source=self.cds_unselected
         )
 

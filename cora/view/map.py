@@ -217,6 +217,7 @@ class MapView(ViewBase):
             y=bokeh.transform.jitter("cora:map:mercatory", width=0.1),
             color="cora:color:glyph",
             marker="cora:marker:glyph",
+            line_color="gray",
             source=self.app.cds
         )
 

@@ -192,7 +192,8 @@ class SplomView(ViewBase):
             y=column_name_y, 
             source=self.app.cds,
             color="cora:color:glyph",
-            marker="cora:marker:glyph"
+            marker="cora:marker:glyph",
+            line_color="gray"
         )
 
         # Link the appearance settings.
