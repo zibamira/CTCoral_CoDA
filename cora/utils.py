@@ -5,8 +5,10 @@ This module contains some utilities and helper functions which did not
 belong some where else specifically.
 """
 
+import enum
 import itertools
 from typing import Iterator, List, Any, Dict
+import re
 
 import bokeh
 import bokeh.models
@@ -21,7 +23,12 @@ __all__ = [
     "data_columns",
     "scalar_columns",
     "categorical_columns",
-    "integral_columns"
+    "integral_columns",
+    "label_columns",
+    "is_rgb_column",
+    "is_rgba_column",
+    "is_color_column",
+    "color_columns",
     "FactorMap"
 ]
 
@@ -54,6 +61,34 @@ def integral_columns(df):
 def label_columns(df):
     """Returns all columns with label (categorical) values."""
     return categorical_columns(df) + integral_columns(df)
+
+
+def is_rgb_column(col):
+    """Returns true if the column contains hexcoded RGB color values."""
+    if not pd.api.types.is_string_dtype(col.dtype):
+        return False
+
+    re_rgb = re.compile("#[0-9a-fA-F]{6}")
+    return col.str.fullmatch(re_rgb).all()
+
+
+def is_rgba_column(col):
+    """Returns true if the column contains hexcoded RGB color values."""
+    if not pd.api.types.is_string_dtype(col.dtype):
+        return False
+
+    re_rgba = re.compile("#[0-9a-fA-F]{8}")
+    return col.str.fullmatch(re_rgba).all()
+
+
+def is_color_column(col):
+    """Returns true if the column contains hexcoded RGB or RGBA data."""
+    return is_rgb_column(col) or is_rgba_column(col)
+
+
+def color_columns(df):
+    """Returns all columns with hexcoded RGB or RGBA data."""
+    return [name for name in data_columns(df) if is_color_column(df[name])]
 
 
 class FactorMap(object):
@@ -93,13 +128,23 @@ class FactorMap(object):
         )
     """
 
+    class Mode(enum.Enum):
+        """Defines the behaviour of the factor map when 
+        there are too many factors in the dataset and too few
+        values in the palette.
+        """
+        CYCLE = enum.auto()
+        REPEAT_LAST = enum.auto()
+
+
     def __init__(
         self, *, 
         name: str,
         df: pd.DataFrame, 
         cds: bokeh.models.ColumnDataSource, 
         column_name: str,
-        palette: List[Any]
+        palette: List[Any],
+        mode: Mode = Mode.REPEAT_LAST
         ):
         """ """
         #: *input* The name of this factor map. The column names of this map
@@ -121,6 +166,9 @@ class FactorMap(object):
         #: *input* A set (palette) of glyphs. Each factor is mapped to a 
         #: glyph in this list.
         self.palette: List[Any] = palette
+
+        #: *input* Defines the out-of-bound behaviour for the palette.
+        self.mode = mode
 
         #: The sorted list with all unique labels (factors).
         #:
@@ -151,6 +199,16 @@ class FactorMap(object):
         #: Emitted when the colormap is updated.
         self.on_update = blinker.Signal()
         return None
+
+    def value_to_factor(self, value):
+        """Maps the column data value *value* to a factor.
+
+        This function is primarily used for colormapping when a range is applied.
+        In most cases, the column value is the factor itself.
+
+        **This method may be overridden.**
+        """
+        return value
 
     def update_df(self):
         """Recomputes the internal factor map.
@@ -183,7 +241,11 @@ class FactorMap(object):
         self.factors = factors
         
         # Create the glyph mapping.
-        palette = itertools.chain(self.palette, itertools.repeat(self.palette[-1]))
+        if self.mode == FactorMap.Mode.CYCLE:
+            palette = itertools.cycle(self.palette)
+        else:
+            palette = itertools.chain(self.palette, itertools.repeat(self.palette[-1]))
+
         self.glyph_map = {factor: glyph for factor, glyph in zip(factors, palette)}
         self.glyph_column = [self.glyph_map[factor] for factor in self.df[self.column_name]]
 

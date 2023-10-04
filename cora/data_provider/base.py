@@ -48,6 +48,9 @@ class DataProvider(object):
         #: in the edge dataframe.
         self.label_field_edges = np.empty(0)
 
+        #: A set of colormaps that may be used inside cora.
+        self.colormaps = dict()
+
         #: This signal is emitted when a resource changed. The emitter
         #: may be called from a different thread.
         #:
@@ -75,6 +78,24 @@ class DataProvider(object):
     def write_edge_selection(self, indices):
         """This method is called by the cora application when the current edge
         selection changed.
+        
+        Subclasses may override this method and store the current selection
+        at some place, e.g. in a JSON or CSV file.
+        """
+        return None
+
+    def write_vertex_colormap(self, colors):
+        """This method is called by the cora application when the vertex colormap
+        changed.
+        
+        Subclasses may override this method and store the current selection
+        at some place, e.g. in a JSON or CSV file.
+        """
+        return None
+
+    def write_edge_colormap(self, colors):
+        """This method is called by the cora application when the edge colormap
+        changed.
         
         Subclasses may override this method and store the current selection
         at some place, e.g. in a JSON or CSV file.

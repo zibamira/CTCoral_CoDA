@@ -96,6 +96,10 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
         #: All file handles corresponding to edge data.
         self.edge_handles: Set[FileHandle] = set()
+
+
+        #: File handle to the provided colormaps.
+        self.colormap_handles: Set[FileHandle] = set()
         
 
         #: Output path for the label field selection table. This table
@@ -110,11 +114,11 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
 
         #: Output path for the current vertex colormap. This table
-        #: contains five rows: xmin, red, green, blue and alpha.
+        #: contains the RGBA hexcoded color for each vertex.
         self.path_vertex_colormap: Optional[pathlib.Path] = None
 
         #: Output path for the current edge colormap. This table
-        #: contains five rows: xmin, red, green, blue and alpha.
+        #: contains the RGBA hexcoded color for each edge.
         self.path_edge_colormap: Optional[pathlib.Path] = None
 
 
@@ -196,6 +200,45 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
         self.unwatch(info)
         self.edge_handles.remove(info)
+        self.file_handles.pop(path)
+
+        self.notify_change()
+        return None
+
+    def add_colormap_csv(self, path: pathlib.Path, prefix=""):
+        """Adds a new colormap spreadsheet to the watchlist."""
+        assert path not in self.file_handles
+        assert path not in self.directory_handles
+
+        path = path.absolute()
+        prefix = prefix or path.stem
+
+        info = FileHandle(
+            path=path, 
+            prefix=prefix, 
+            dirty=True, 
+            data=None,
+            observed_watch=None
+        )
+
+        self.file_handles[info.path] = info
+        self.colormap_handles.add(info)
+        
+        self.watch(info)
+        self.notify_change()
+        return None
+
+    def remove_colormap_csv(self, path: pathlib.Path):
+        """Removes a file from the data provider."""
+        if path not in self.file_handles:
+            return None
+
+        info = self.file_handles[path]
+        if info not in self.colormap_handles:
+            return None
+
+        self.unwatch(info)
+        self.colormap_handles.remove(info)
         self.file_handles.pop(path)
 
         self.notify_change()
@@ -353,23 +396,30 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
         if dfs:
             self.df_edges = pd.concat(dfs, axis="columns")
         return None
-    
-    def reload_edge_colormap(self):
-        """Reload the edge colormap from a CSV spreadsheet."""
-        # TODO: Implement this method.
-        return None
 
-    def reload_vertex_colormap(self):
-        """Reload the vertex colormap from a CSV spreadsheet."""
-        # TODO: Implement this method.
-        return None    
+    def reload_colormap(self):
+        """Reload the registered colormaps."""
+        for info in self.colormap_handles:
+            if not info.path.exists():
+                info.data = None
+                info.dirty = True
+            elif info.dirty:
+                info.data = pd.read_csv(info.path, header=1)
+                info.dirty = False
+        
+        # Parse the colormaps so that they can be used in Bokeh.
+        self.colormaps = {
+            info.prefix: info.data \
+            for info in self.colormap_handles \
+            if info.data is not None
+        }
+        return None
 
     def reload(self):
         """Reloads and merges all paths marked as dirty."""
         self.reload_vertex()
         self.reload_edge()
-        self.reload_edge_colormap()
-        self.reload_vertex_colormap()
+        self.reload_colormap()
         return None
     
     def write_vertex_selection(self, indices):
@@ -420,22 +470,34 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
             df.to_csv(file, sep=",", header=True, index=False)
         return None
     
-    def write_vertex_colormap(self):
+    def write_vertex_colormap(self, colors):
         """Stores the current vertex colormap as CSV formatted file
         at :attr:`path_vertex_colormap.
         """
         if not self.path_vertex_colormap:
             return None
-        
-        # TODO: Implement this method.
+
+        # Put everything into a dataframe.
+        df = pd.DataFrame(data={"rgba": colors}, copy=False)
+
+        # Save the CSV with an extra Amira header.
+        with open(self.path_vertex_colormap, "w") as file:
+            file.write("\"CORA vertex colormap\"\n")
+            df.to_csv(file, sep=",", header=True, index=False)
         return None
 
-    def write_edge_colormap(self):
+    def write_edge_colormap(self, colors):
         """Stores the current edge colormap as CSV formatted file
         at :attr:`path_edge_colormap.
         """
         if not self.path_edge_colormap:
             return None
-        
-        # TODO: Implement this method.
+
+        # Put everything into a dataframe.
+        df = pd.DataFrame(data={"rgba": colors}, copy=False)
+
+        # Save the CSV with an extra Amira header.
+        with open(self.path_edge_colormap, "w") as file:
+            file.write("\"CORA edge colormap\"\n")
+            df.to_csv(file, sep=",", header=True, index=False)
         return None

@@ -20,6 +20,7 @@ import pandas as pd
 import cora.utils
 from cora.utils import FactorMap
 from cora.data_provider import DataProvider
+from cora.data_provider.amira import LABELS256 as Amira_LABELS256
 
 
 def init_logging():
@@ -99,7 +100,8 @@ class Application(object):
             df=self.df,
             cds=self.cds,
             column_name=None,
-            palette=["blue", "green", "yellow", "red", "black", "grey"]
+            palette=Amira_LABELS256[1:],
+            mode=FactorMap.Mode.CYCLE
         )
 
         #: The vertex glyph map.
@@ -108,7 +110,8 @@ class Application(object):
             df=self.df,
             cds=self.cds,
             column_name=None,
-            palette=["circle", "cross", "diamond", "asterisk"]
+            palette=["circle", "cross", "diamond", "asterisk"],
+            mode=FactorMap.Mode.REPEAT_LAST
         )
 
         #: The edge color map.
@@ -117,7 +120,8 @@ class Application(object):
             df=self.df_edges,
             cds=self.cds_edges,
             column_name=None,
-            palette=["black", "grey", "blue", "green", "yellow", "red"]
+            palette=Amira_LABELS256,
+            mode=FactorMap.Mode.CYCLE
         )
 
         # -- UI controls input --
@@ -191,7 +195,7 @@ class Application(object):
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="Graph", 
+            value="None", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -283,6 +287,10 @@ class Application(object):
         # Propagate the (eventually) new selection again to the data providers.
         self.data_provider.write_vertex_selection(self.cds.selected.indices)
         self.data_provider.write_edge_selection(self.cds_edges.selected.indices)
+
+        # Propagate the current colormap to the data providers.
+        self.data_provider.write_vertex_colormap(self.fmap_color.glyph_column)
+        self.data_provider.write_edge_colormap(self.fmap_color_edges.glyph_column)
         return None
 
     def push_df_to_cds(self, vertex: bool=False, edge: bool=False, force: bool=False):
@@ -308,6 +316,8 @@ class Application(object):
         fmap.cds = self.cds
         fmap.column_name = self.ui_select_color.value
         fmap.update_df()
+
+        self.data_provider.write_vertex_colormap(fmap.glyph_column)
         return None
     
     def update_markermap(self):
@@ -326,6 +336,8 @@ class Application(object):
         fmap.cds = self.cds_edges
         fmap.column_name = self.ui_select_color_edges.value
         fmap.update_df()
+
+        self.data_provider.write_edge_colormap(fmap.glyph_column)
         return None        
     
 

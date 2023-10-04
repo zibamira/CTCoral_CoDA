@@ -5,6 +5,8 @@ This module implements a data provider generating random data,
 mainly for testing and development purposes.
 """
 
+from pprint import pprint
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -54,3 +56,28 @@ class RandomDataProvider(DataProvider):
         self.df_edges = df_edges
         self.notify_change()
         return None
+
+    def write_vertex_selection(self, indices):
+        print("-- begin: vertex selection --")
+        pprint(indices)
+        print("-- end: vertex selection --")
+        return None
+
+    def write_edge_selection(self, indices):
+        print("-- begin: edge selection --")
+        pprint(indices)
+        print("-- end: edge selection --")
+        return None
+
+    def write_vertex_colormap(self, colors):
+        print("-- begin: vertex colormap --")
+        pprint(colors)
+        print("-- end: vertex colormap --")
+        return None
+
+    def write_edge_colormap(self, colors):
+        print("-- begin: edge colormap --")
+        pprint(colors)
+        print("-- end: edge colormap --")
+        return None
+        
