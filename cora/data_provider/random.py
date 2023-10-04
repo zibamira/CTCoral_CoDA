@@ -46,10 +46,10 @@ class RandomDataProvider(DataProvider):
         })
 
         # graph (and thus edge) data
-        G = nx.random_regular_graph(d=3, n=nsamples)
+        G = nx.random_regular_graph(d=2, n=nsamples)
         G = nx.minimum_spanning_tree(G)
         df_edges = nx.to_pandas_edgelist(
-            G=G, source="source", target="target"
+            G=G, source="input:source", target="input:target"
         )
 
         self.df = df
