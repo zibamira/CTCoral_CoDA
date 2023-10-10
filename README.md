@@ -79,6 +79,7 @@ amira_cora_C1W_qz5qvv
 $ python3 run.py --start-browser amira /tmp/amira_cora_Untitled_c8vTVF/ 
 ```
 
+
 ## Visualization
 
 Cora is based on the Bokeh visualization framework and provides an extensive, interactive linke and brushing UI. You can choose between several visualizations:
@@ -99,6 +100,17 @@ Cora is based on the Bokeh visualization framework and provides an extensive, in
     The embedding view provides a principal-component analysis tool (PCA) and a *UMAP* tool for dimensionality reduction. You can choose which columns should be part of the reduction and visualize the result in e.g. a Scatter plot. The reduction coefficients are made available as standard vertex attributes.
 *   **Flower**\
     One of the more beautiful plots. A *flower* plots aggregates some statistics of user selected columns, e.g. the minimum, maximum, mean median and standard variance. These statistics are displayed in visually appealing flower like glyphs.
+
+
+## Custom Tools
+
+Cora comes with custom Bokeh tools that are implemented via JavaScript, so that they will run in the frontend rather than the backend. The usage requires that the user has a NodeJs 14.0 or higher installed.
+
+You can use NVM (Node Version Manager) to make sure that you have a compatible version installed. The LTS version should work but if you experience problems, then you may need to check BokehJs for it's latest compatible version and use that one.
+```
+nvm install --lts
+nvm use --lts
+```
 
 
 ## Nice To Have
