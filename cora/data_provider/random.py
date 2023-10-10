@@ -72,25 +72,25 @@ class RandomDataProvider(DataProvider):
 
     def write_vertex_selection(self, indices):
         print("-- begin: vertex selection --")
-        pprint(indices)
+        print(indices)
         print("-- end: vertex selection --")
         return None
 
     def write_edge_selection(self, indices):
         print("-- begin: edge selection --")
-        pprint(indices)
+        print(indices)
         print("-- end: edge selection --")
         return None
 
     def write_vertex_colormap(self, colors):
         print("-- begin: vertex colormap --")
-        pprint(colors)
+        print(colors)
         print("-- end: vertex colormap --")
         return None
 
     def write_edge_colormap(self, colors):
         print("-- begin: edge colormap --")
-        pprint(colors)
+        print(colors)
         print("-- end: edge colormap --")
         return None
         
