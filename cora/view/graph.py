@@ -8,7 +8,6 @@ and edge attributes, are given in a separate DataFrame.
 The graph layouts are computed with the networkx package.
 """
 
-import pathlib
 from typing import List, Literal
 
 import bokeh
@@ -21,6 +20,7 @@ import numpy as np
 import networkx as nx
 
 from cora.application import Application
+from cora.tools.ancestor_tool import AncestorTool
 from cora.view.base import ViewBase
 import cora.utils
 
@@ -28,90 +28,6 @@ import cora.utils
 __all__ = [
     "GraphView"
 ]
-
-
-this_dir = pathlib.Path(__file__).parent
-
-
-def MyTapTool(
-        colname_source,
-        colname_target,
-        cds_vertices, 
-        cds_edges, 
-        *args, **kargs
-    ):
-    """A special tap tool that selects ancestors."""
-    tool = bokeh.models.TapTool(*args, **kargs)
-
-    tool.callback = bokeh.models.CustomJS(
-        args={
-            "cds_vertices": cds_vertices, 
-            "cds_edges": cds_edges,
-            "colname_source": colname_source,
-            "colname_target": colname_target
-        },
-        code="""
-            // Get the current tap selection.
-            const tap_selection = cb_data.source.selected.indices;
-            if(tap_selection.length == 0)
-            {
-                return;
-            }
-            
-            const col_source = cds_edges.data[colname_source];
-            const col_target = cds_edges.data[colname_target];
-
-            const nedges = cds_edges.length;
-            const nvertices = cds_vertices.length;
-
-            // Build a linked list for faster lookups.
-            let graph = Array.from({length: nvertices}, () => {
-                return [];
-            });
-            for(let iedge = 0; iedge < nedges; ++iedge)
-            {
-                let isource = col_source[iedge];
-                let itarget = col_target[iedge];
-                graph[isource].push(itarget);
-            }
-
-            // Find all ancestors.
-            let istart = tap_selection[0];
-            let queue = [istart];
-            let seen = [];
-
-            while(queue.length > 0)
-            {
-                const isource = queue.shift();
-                if(seen.includes(isource))
-                {
-                    continue;
-                }
-
-                seen.push(isource);
-                
-                graph[isource].forEach((itarget, _) => {
-                    if(!queue.includes(itarget))
-                    {
-                        queue.push(itarget);
-                    }
-                });
-            }
-
-            seen.sort();
-            console.log(seen);
-
-            // Markt the descendants as selected.
-            cds_vertices.selected.indices = seen;
-/*
-
-            console.log(col_source);
-            console.log(col_target);
-            console.log(nvertices);
-            console.log(graph);
-            */
-    """)
-    return tool
 
 
 class GraphView(ViewBase):
@@ -456,13 +372,13 @@ class GraphView(ViewBase):
         p.xgrid.visible = False
         p.ygrid.visible = False
 
-        my_tool = MyTapTool(
+        ancestor_tool = AncestorTool(
             self.ui_select_column_source.value,
             self.ui_select_column_target.value,
             self.app.cds, 
             self.app.cds_edges
         )
-        p.add_tools(my_tool)
+        p.add_tools(ancestor_tool)
 
         # edge arrows
         # This was taken from a Bokeh example "arrow.html" regarding annoations.
