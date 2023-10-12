@@ -372,12 +372,9 @@ class GraphView(ViewBase):
         p.xgrid.visible = False
         p.ygrid.visible = False
 
-        ancestor_tool = AncestorTool(
-            self.ui_select_column_source.value,
-            self.ui_select_column_target.value,
-            self.app.cds, 
-            self.app.cds_edges
-        )
+        ancestor_tool = AncestorTool()
+        ancestor_tool.source_vertices = self.app.cds
+        ancestor_tool.source_edges = self.app.cds_edges
         p.add_tools(ancestor_tool)
 
         # edge arrows

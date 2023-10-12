@@ -15,6 +15,7 @@ import bokeh
 import bokeh.layouts
 import bokeh.models
 import bokeh.plotting
+import bokeh.util.compiler
 
 import pandas as pd
 import numpy as np
@@ -31,7 +32,21 @@ __all__ = [
 this_dir = pathlib.Path(__file__).parent
 
 
-def AncestorTool(
+class AncestorTool(bokeh.models.Tool):
+    """Select all ancestors when clicked on a vertex glyph."""
+
+    def __init__(self, *args, **kargs) -> None:
+        super().__init__(*args, **kargs)
+        return None
+
+    CODE = (this_dir / "ancestor_tool.ts").read_text()
+    __implementation__ = bokeh.util.compiler.TypeScript(CODE)
+
+    source_edges = bokeh.core.properties.Instance(bokeh.models.ColumnDataSource)
+    source_vertices = bokeh.core.properties.Instance(bokeh.models.ColumnDataSource)
+
+
+def OldAncestorTool(
         colname_source,
         colname_target,
         cds_vertices, 
