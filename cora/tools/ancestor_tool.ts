@@ -1,17 +1,30 @@
+/**
+ * This module implements a custom Bokeh tool for selecting special subgraphs,
+ * e.g. all ancestors or all descendants. 
+ * 
+ * The documentation of BokehJS was kinda non-exsistent when I tried to 
+ * implement this tool. It is based on the source code of the *TapTool*,
+ * the *SelectionManager* and the documentation for a custom drawing tool.
+ * 
+ * The most important insight is that Bokeh keeps a list of *inspected*
+ * and *selected* indices. Both can be changed by user interaction and are similarly
+ * implemented, but only the *selected* index list is shown as actually selected,
+ * while the *inspected* list is used to implement tooltips e.g. when hovering
+ * a glyph.
+ */
 import {SelectTool, SelectToolView} from "models/tools/gestures/select_tool"
 import {ColumnDataSource} from "models/sources/column_data_source"
 import {TapEvent} from "core/ui_events"
 import * as p from "core/properties"
 import type {PointGeometry} from "core/geometry"
-import type {DataRendererView} from "models/renderers/data_renderer"
 
 
 export class AncestorToolView extends SelectToolView {
   declare model: AncestorTool
 
-  counter = 0;
-
-
+  /**
+   * React to tap (mouse click) events.
+   */
   _tap(ev: TapEvent): void {
     const {sx, sy} = ev
     const {frame} = this.plot_view
@@ -19,7 +32,6 @@ export class AncestorToolView extends SelectToolView {
       return
 
     this._clear_other_overlays()
-
     const geometry: PointGeometry = {type: "point", sx, sy}
     this._select(geometry)
   }
@@ -41,17 +53,11 @@ export class AncestorToolView extends SelectToolView {
 
       const did_hit = sm.inspect(rv, geometry)
       if (did_hit) {
-        console.log("SELECTED INDICES");
-        console.log(sm.source.inspected.indices);
-
         let roots = Array<number>();
-        for(let ind of sm.source.inspected.indices)
-        {
+        for(let ind of sm.source.inspected.indices) {
           roots.push(ind);
-        }
-        
+        }        
         this._select_ancestors(roots);
-        // this._emit_callback(rv, geometry, sm.source, modifiers)
       }
     }
   }
@@ -111,21 +117,6 @@ export class AncestorToolView extends SelectToolView {
     // Markt the descendants as selected.
     cds_vertices.selected.indices = seen;
   }
-
-  _do_subgraph_selection(
-    rv: DataRendererView, 
-    geometry:PointGeometry,
-    source: ColumnDataSource
-  ) : void 
-  {
-    const x = rv.coordinates.x_scale.invert(geometry.sx)
-    const y = rv.coordinates.y_scale.invert(geometry.sy)
-    const data = {
-      geometries: {...geometry, x, y},
-      source,
-    }
-    console.log(data);
-  }
 }
 
 
@@ -135,6 +126,7 @@ export namespace AncestorTool {
   export type Props = SelectTool.Props & {
     source_vertices: p.Property<ColumnDataSource>
     source_edges: p.Property<ColumnDataSource>
+    mode: p.Property<
   }
 }
 
