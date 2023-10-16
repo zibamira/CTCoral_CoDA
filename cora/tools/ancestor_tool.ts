@@ -43,9 +43,73 @@ export class AncestorToolView extends SelectToolView {
       if (did_hit) {
         console.log("SELECTED INDICES");
         console.log(sm.source.inspected.indices);
+
+        let roots = Array<number>();
+        for(let ind of sm.source.inspected.indices)
+        {
+          roots.push(ind);
+        }
+        
+        this._select_ancestors(roots);
         // this._emit_callback(rv, geometry, sm.source, modifiers)
       }
     }
+  }
+
+  _select_ancestors(roots: Array<number>)
+  {
+    console.log("Do subgraph selection.");
+
+    const cds_edges = this.model.source_edges;
+    const cds_vertices = this.model.source_vertices;
+
+    const nedges = cds_edges.length;
+    const nvertices = cds_vertices.length;
+
+    const colname_source = "input:source";
+    const colname_target = "input:target";
+
+    const col_source = cds_edges.data[colname_source];
+    const col_target = cds_edges.data[colname_target];
+    
+    // Build a linked list for faster lookups.
+    let graph = Array.from({length: nvertices}, () => {
+      return Array<number>();
+    });
+    for(let iedge = 0; iedge < nedges; ++iedge)
+    {
+        let isource = col_source[iedge];
+        let itarget = col_target[iedge];
+        graph[isource].push(itarget);
+    }
+
+    // Find all ancestors.
+    let queue = Array.from(roots);
+    let seen = Array<number>();
+
+    while(queue.length > 0)
+    {
+        const isource = queue.shift()!;
+        if(seen.includes(isource))
+        {
+            continue;
+        }
+
+        seen.push(isource);
+        
+        graph[isource].forEach((itarget, _) => {
+            if(!queue.includes(itarget))
+            {
+                queue.push(itarget);
+            }
+        });
+    }
+
+    seen.sort();
+    console.log(seen);
+
+    // Markt the descendants as selected.
+    cds_vertices.selected.indices = seen;
   }
 
   _do_subgraph_selection(
