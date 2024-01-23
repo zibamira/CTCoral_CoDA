@@ -276,6 +276,7 @@ class GraphView(ViewBase):
 
         # Compute the positions of all vertices.
         layout_algorithm = self.ui_select_graph_layout.value
+        layout_algorithm = "spring"
 
         if layout_algorithm == "dot":
             positions = nx.drawing.nx_pydot.graphviz_layout(self.nx_graph, prog="dot")
@@ -301,7 +302,13 @@ class GraphView(ViewBase):
             positions = nx.drawing.spring_layout(self.nx_graph)
 
         # Normalize the scale.
-        positions = np.array([positions[irow] for irow, _ in self.app.df.iterrows()])
+        # XXX: Some layout algorithms did not return positions for vertices with no adjacent edges.
+        #      Since we need to draw *all* vertices, I opted for a quick fix placing them at the same position.
+        #      Eventually, they should be drawn transparent or a proper layout with them should be computed.
+        positions = np.array([
+            positions[irow] if irow in positions else [-1.0, 0.0] \
+            for irow, _ in self.app.df.iterrows()
+        ])
         positions -= np.mean(positions, axis=0)
         positions /= np.std(positions, axis=0)
 
