@@ -151,8 +151,8 @@ class GraphView(ViewBase):
 
         # Choose the default layout if this is the first reload.
         if self.nx_graph and self.ui_select_graph_layout.value not in self.LAYOUT_ALGORITHMS:
-            if nx.is_tree(self.nx_graph):
-                self.ui_select_graph_layout.value = "twopi"
+            if nx.is_forest(self.nx_graph):
+                self.ui_select_graph_layout.value = "dot"
             else:
                 self.ui_select_graph_layout.value = "spring"
                 
@@ -276,7 +276,6 @@ class GraphView(ViewBase):
 
         # Compute the positions of all vertices.
         layout_algorithm = self.ui_select_graph_layout.value
-        layout_algorithm = "spring"
 
         if layout_algorithm == "dot":
             positions = nx.drawing.nx_pydot.graphviz_layout(self.nx_graph, prog="dot")
