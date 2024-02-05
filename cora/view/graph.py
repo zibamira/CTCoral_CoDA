@@ -22,7 +22,8 @@ import networkx as nx
 from cora.application import Application
 from cora.tools.graph_tools import (
     make_ancestor_tool, 
-    make_descendant_tool
+    make_descendant_tool,
+    make_component_tool
 )
 from cora.view.base import ViewBase
 import cora.utils
@@ -397,8 +398,15 @@ class GraphView(ViewBase):
             cds_vertices=self.app.cds,
             cds_edges=self.app.cds_edges
         )
+        component_tool = make_component_tool(
+            colname_source=self.ui_select_column_source.value,
+            colname_target=self.ui_select_column_target.value,
+            cds_vertices=self.app.cds,
+            cds_edges=self.app.cds_edges
+        )
         p.add_tools(ancestor_tool)
         p.add_tools(descendant_tool)
+        p.add_tools(component_tool)
 
         # edge arrows
         # This was taken from a Bokeh example "arrow.html" regarding annoations.

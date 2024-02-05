@@ -27,6 +27,7 @@ from cora.application import Application
 __all__ = [
     "make_ancestor_tool",
     "make_descendant_tool",
+    "make_component_tool",
     "AncestorToolTS"
 ]
 
@@ -156,6 +157,78 @@ def make_descendant_tool(
                     continue;
                 }
                 seen.push(isource);                
+                graph[isource].forEach((itarget, _) => {
+                    if(!queue.includes(itarget))
+                    {
+                        queue.push(itarget);
+                    }
+                });
+            }
+
+            // Mark the descendants as selected.
+            seen.sort();
+            cds_vertices.selected.indices = seen;
+    """)
+    return tool
+
+
+def make_component_tool(
+        colname_source: str,
+        colname_target: str,
+        cds_vertices: bokeh.models.ColumnDataSource, 
+        cds_edges: bokeh.models.ColumnDataSource,
+        *args, **kargs
+    ):
+    """A special tap tool that selects the whole, weakly connected component
+    of the tapped vertices.
+    
+    TODO: Allow to synchonize the *colname_source* and *colname_target* after creation.
+    """
+    tool = bokeh.models.TapTool(*args, **kargs, behavior="inspect")
+    tool.name = "component-tool"
+    tool.icon = this_dir / "asterisk-solid.png"
+    tool.callback = bokeh.models.CustomJS(
+        args={
+            "cds_vertices": cds_vertices, 
+            "cds_edges": cds_edges,
+            "colname_source": colname_source,
+            "colname_target": colname_target
+        },
+        code="""
+            // Get the current tap selection.
+            const tap_selection = cb_data.source.inspected.indices;
+            if(tap_selection.length == 0) {
+                return;
+            }
+            
+            const col_source = cds_edges.data[colname_source];
+            const col_target = cds_edges.data[colname_target];
+            const nedges = cds_edges.length;
+            const nvertices = cds_vertices.length;
+
+            // Build a linked list for faster lookups.
+            let graph = Array.from({length: nvertices}, () => {
+                return [];
+            });
+            for(let iedge = 0; iedge < nedges; ++iedge) {
+                let isource = col_source[iedge];
+                let itarget = col_target[iedge];
+
+                // Create two edges, one from the source, one from the target.
+                // I.e. we consider the graph to be undirected.
+                graph[itarget].push(isource);
+                graph[isource].push(itarget);
+            }
+
+            // Find all vertices in the connected component.
+            let queue = tap_selection;
+            let seen = [];
+            while(queue.length > 0) {
+                const isource = queue.shift();
+                if(seen.includes(isource)) {
+                    continue;
+                }
+                seen.push(isource);       
                 graph[isource].forEach((itarget, _) => {
                     if(!queue.includes(itarget))
                     {
