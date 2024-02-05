@@ -156,6 +156,4 @@ This section contains some design rationales and also why I decided against some
 ## ToDo
 
 *   Implement selection tools for interesting queries.
-    *   All ancestors
-    *   All descendents
     *   All nodes on the shortest path
