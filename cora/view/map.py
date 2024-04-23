@@ -190,7 +190,7 @@ class MapView(ViewBase):
         pfigure = bokeh.plotting.figure(
             title="Map",
             sizing_mode="stretch_both",
-            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover",
+            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover,save",
             toolbar_location="above",
             x_axis_type="mercator",
             x_axis_label="Longitude",
@@ -203,7 +203,7 @@ class MapView(ViewBase):
         )
 
         pfigure.add_tile(
-            xyzservices.providers.OpenStreetMap.Mapnik,
+            tile_source="ESRI_IMAGERY",
             retina=True
         )
 
