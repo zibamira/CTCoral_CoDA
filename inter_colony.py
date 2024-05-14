@@ -33,10 +33,17 @@ colony_infos["A2W"] = {
 # }
 
 colony_infos["C1W"] = {
-    "latitude": 64.111000,
-    "longitude": 8.118700,
+    "latitude": 64.0662,
+    "longitude": 8.071,
     "elevation": -303.0,
     "data_dir": bremen_dir / "C1W"
+}
+
+colony_infos["SaM-43148"] = {
+    "latitude": 64.05,
+    "longitude": 8.02,
+    "elevation": -250.0,
+    "data_dir": bremen_dir / "SaM-43148"
 }
 
 colony_infos["GeoB12747-1"] = {
@@ -51,13 +58,6 @@ colony_infos["Niwa-148046"] = {
     "longitude": 179.452,
     "elevation": 394.0,
     "data_dir": bremen_dir / "Niwa-148046"
-}
-
-colony_infos["SaM-43148"] = {
-    "latitude": 41.725170,
-    "longitude": 17.046330,
-    "elevation": -674.0,
-    "data_dir": bremen_dir / "SaM-43148"
 }
 
 
