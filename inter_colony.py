@@ -15,6 +15,7 @@ import pandas as pd
 
 
 this_dir = pathlib.Path(__file__).parent.absolute()
+output_dir = this_dir / "data" / "inter_colony"
 bremen_dir = (this_dir / "../BremenExploreScience").absolute()
 
 
@@ -142,11 +143,11 @@ df_corallites = pd.concat(df[columns_corallites] for prefix, df in zip(prefixes,
 df_info = pd.concat(df[columns_info] for prefix, df in zip(prefixes, dfs_info))
 
 # Save the compiled spreadsheets.
-with (this_dir / "data" / "vertex_corals.csv").open("w") as file:
+with (output_dir / "vertex_corals.csv").open("w") as file:
     file.write("\"CORA compilation\"\n")
     df_corals.to_csv(file, sep=",", header=True, index=False)
 
-with (this_dir / "data" / "vertex_corallites.csv").open("w") as file:
+with (output_dir / "vertex_corallites.csv").open("w") as file:
     file.write("\"CORA compilation\"\n")
     df_corallites.to_csv(file, sep=",", header=True, index=False)
 
@@ -154,6 +155,6 @@ with (this_dir / "data" / "vertex_corallites.csv").open("w") as file:
 #     file.write("\"CORA compilation\"\n")
 #     df_framework.to_csv(file, sep=",", header=True, index=False)
 
-with (this_dir / "data" / "vertex_info.csv").open("w") as file:
+with (output_dir / "vertex_info.csv").open("w") as file:
     file.write("\"CORA compilation\"\n")
     df_info.to_csv(file, sep=",", header=True, index=False)

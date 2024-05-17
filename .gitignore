@@ -160,4 +160,4 @@ cython_debug/
 #.idea/
 
 # Cora
-data/
+data/**/cora_*.csv
