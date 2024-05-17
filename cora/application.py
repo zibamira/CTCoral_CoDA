@@ -100,7 +100,8 @@ class Application(object):
             df=self.df,
             cds=self.cds,
             column_name=None,
-            palette=Amira_LABELS256[1:],
+            #palette=Amira_LABELS256[1:],
+            palette=cora.utils.matplotlib_palette("Set2"),
             mode=FactorMap.Mode.CYCLE
         )
 

@@ -17,6 +17,7 @@ import blinker
 import pandas as pd
 import numpy as np
 from natsort import natsorted
+import matplotlib
 
 
 __all__ = [
@@ -89,6 +90,15 @@ def is_color_column(col):
 def color_columns(df):
     """Returns all columns with hexcoded RGB or RGBA data."""
     return [name for name in data_columns(df) if is_color_column(df[name])]
+
+
+def matplotlib_palette(name: str) -> List[str]:
+    """Returns the palette of a :mod:`matplotlib` colormap, so that it can 
+    be used in a :class:`FactorMap`.
+    """
+    cmap = matplotlib.colormaps[name]
+    hex_colors = [matplotlib.colors.to_hex(color) for color in cmap.colors]
+    return hex_colors
 
 
 class FactorMap(object):
