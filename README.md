@@ -100,6 +100,8 @@ Cora is based on the Bokeh visualization framework and provides an extensive, in
     The embedding view provides a principal-component analysis tool (PCA) and a *UMAP* tool for dimensionality reduction. You can choose which columns should be part of the reduction and visualize the result in e.g. a Scatter plot. The reduction coefficients are made available as standard vertex attributes.
 *   **Flower**\
     One of the more beautiful plots. A *flower* plots aggregates some statistics of user selected columns, e.g. the minimum, maximum, mean median and standard variance. These statistics are displayed in visually appealing flower like glyphs.
+*   **Statistics**\
+    Shows a spreadsheet with simple statistics (min, max, mean, quantiles, unique values), for the current selection. The statistics are shown for each scalar column in the original vertex spreadsheets.
 
 
 ## Custom Tools
