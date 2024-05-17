@@ -8,6 +8,7 @@ Currently, it's just a workaround to see if it is feasible and useful.
 """
 
 import pathlib
+import collections
 
 import numpy as np
 import pandas as pd
@@ -18,10 +19,10 @@ bremen_dir = (this_dir / "../BremenExploreScience").absolute()
 
 
 # Add some meta data to the colonies themselves.
-colony_infos = dict()
+colony_infos = collections.OrderedDict()
 colony_infos["A2W"] = {
-    "latitude": 63.3646,
-    "longitude": 9.2276,
+    "latitude": 63.6077,
+    "longitude": 9.3793,
     "elevation": -157.0,
     "data_dir": bremen_dir / "A2W"
 }
@@ -33,16 +34,16 @@ colony_infos["A2W"] = {
 # }
 
 colony_infos["C1W"] = {
-    "latitude": 64.0662,
-    "longitude": 8.071,
+    "latitude": 64.1110,
+    "longitude": 8.1187,
     "elevation": -303.0,
     "data_dir": bremen_dir / "C1W"
 }
 
 colony_infos["SaM-43148"] = {
-    "latitude": 64.05,
-    "longitude": 8.02,
-    "elevation": -250.0,
+    "latitude": 41.719670,
+    "longitude": 17.060830,
+    "elevation": -700.0,
     "data_dir": bremen_dir / "SaM-43148"
 }
 
@@ -54,7 +55,7 @@ colony_infos["GeoB12747-1"] = {
 }
 
 colony_infos["Niwa-148046"] = {
-    "latitude": 43.369,
+    "latitude": -43.369,
     "longitude": 179.452,
     "elevation": 394.0,
     "data_dir": bremen_dir / "Niwa-148046"
