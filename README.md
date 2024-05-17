@@ -151,9 +151,3 @@ This section contains some design rationales and also why I decided against some
     *   The Bokeh column data sources are updated with the content in the *df* and *df_edges* data frames.
     *   The views update the plots to account for the new data if needed.
     *   The reload is done and Cora sets the *is_reloading* flag to *False*.
-
-
-## ToDo
-
-*   Implement selection tools for interesting queries.
-    *   All nodes on the shortest path
