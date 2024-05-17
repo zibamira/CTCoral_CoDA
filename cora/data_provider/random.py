@@ -55,7 +55,7 @@ class RandomDataProvider(DataProvider):
             "input:col C": np.random.random(nsamples),
             "input:col D": np.random.random(nsamples),
             "input:col E": np.random.random(nsamples),
-            "input:col F": np.random.random(nsamples),
+            "input:col F": np.random.randint(-10, 10, nsamples),
             "input:label A": np.random.choice(["A1", "A2"], size=nsamples),
             "input:label B": np.random.choice(["B1", "B2", "B3"], size=nsamples),
             "input:latitude": latitude,

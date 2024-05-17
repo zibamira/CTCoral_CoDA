@@ -195,14 +195,15 @@ class Application(object):
             "Scatter",
             "Map",
             "PCA",
-            "UMAP"
+            "UMAP",
+            "Statistics",
         ]
 
         #: Menu for selecting the view in the left panel.
         self.ui_select_panel_left = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="None", 
+            value="Statistics", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_left.on_change(
@@ -213,7 +214,7 @@ class Application(object):
         self.ui_select_panel_right = bokeh.models.Select(
             title="Plot Type",
             options=VIEWS,
-            value="None", 
+            value="Scatter", 
             sizing_mode="stretch_width"
         )
         self.ui_select_panel_right.on_change(
@@ -434,6 +435,10 @@ class Application(object):
         if view_type == "PCA":
             from cora.view.pca import PCAView
             return PCAView(self)
+
+        if view_type == "Statistics":
+            from cora.view.statistics import StatisticsView
+            return StatisticsView(self)
         return None
 
     # -- UI signals --
