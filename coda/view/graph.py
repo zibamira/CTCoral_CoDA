@@ -1,5 +1,5 @@
 """
-:mod:`cora.view.graph`
+:mod:`coda.view.graph`
 
 This module implements the graph plot in Bokeh. The vertices are given
 as rows in a pandas DataFrame. The edge information, i.e. connectivity
@@ -19,14 +19,14 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
-from cora.application import Application
-from cora.tools.graph_tools import (
+from coda.application import Application
+from coda.tools.graph_tools import (
     make_ancestor_tool, 
     make_descendant_tool,
     make_component_tool
 )
-from cora.view.base import ViewBase
-import cora.utils
+from coda.view.base import ViewBase
+import coda.utils
 
 
 __all__ = [
@@ -133,7 +133,7 @@ class GraphView(ViewBase):
         """Reload the graph and recompute the layout."""
         # Candidates for all source and target columns identifiying the 
         # edge orientation.
-        integral_columns = cora.utils.integral_columns(self.app.df_edges)
+        integral_columns = coda.utils.integral_columns(self.app.df_edges)
         self.ui_select_column_source.options = integral_columns
         self.ui_select_column_target.options = integral_columns
 
@@ -336,18 +336,18 @@ class GraphView(ViewBase):
 
         # Update the edge data.
         df_edges = self.app.df_edges
-        df_edges["cora:graph:xs"] = xs
-        df_edges["cora:graph:ys"] = ys
-        df_edges["cora:graph:arrow_x0"] = x0
-        df_edges["cora:graph:arrow_y0"] = y0
-        df_edges["cora:graph:arrow_x1"] = x1
-        df_edges["cora:graph:arrow_y1"] = y1
-        df_edges["cora:graph:arrow_angle"] = angle
+        df_edges["coda:graph:xs"] = xs
+        df_edges["coda:graph:ys"] = ys
+        df_edges["coda:graph:arrow_x0"] = x0
+        df_edges["coda:graph:arrow_y0"] = y0
+        df_edges["coda:graph:arrow_x1"] = x1
+        df_edges["coda:graph:arrow_y1"] = y1
+        df_edges["coda:graph:arrow_angle"] = angle
 
         # Update the vertex data.
         df_vertices = self.app.df
-        df_vertices["cora:graph:x"] = positions[:, 0]
-        df_vertices["cora:graph:y"] = positions[:, 1]
+        df_vertices["coda:graph:x"] = positions[:, 0]
+        df_vertices["coda:graph:y"] = positions[:, 1]
 
         # Schedule a column data source update.
         self.app.push_df_to_cds(vertex=True, edge=True)
@@ -365,7 +365,7 @@ class GraphView(ViewBase):
         #      always called "start" and "end". 
         #      Because the renderes also created somehow new data sources
         #      by themselves, I decided to just reimplemented the
-        #      network drawing features needed in Cora. Unfortunetly,
+        #      network drawing features needed in Coda. Unfortunetly,
         #      this means to forgo the selection tool capabilities.
         p = bokeh.plotting.figure(
             syncable=True,
@@ -415,16 +415,16 @@ class GraphView(ViewBase):
         # multi-line edges.
         head = bokeh.models.NormalHead(
             size=12, 
-            fill_color="cora:edge:color:glyph", 
+            fill_color="coda:edge:color:glyph", 
             line_color="transparent"
         )
         pedges_arrow = bokeh.models.Arrow(
             end=head,
-            x_start="cora:graph:arrow_x0",
-            y_start="cora:graph:arrow_y0",
-            x_end="cora:graph:arrow_x1",
-            y_end="cora:graph:arrow_y1",
-            line_color="cora:edge:color:glyph",
+            x_start="coda:graph:arrow_x0",
+            y_start="coda:graph:arrow_y0",
+            x_end="coda:graph:arrow_x1",
+            y_end="coda:graph:arrow_y1",
+            line_color="coda:edge:color:glyph",
             source=self.app.cds_edges
         )
         p.add_layout(pedges_arrow)
@@ -441,9 +441,9 @@ class GraphView(ViewBase):
 
         # edges (multiline)
         pedges_line = p.multi_line(
-            xs="cora:graph:xs",
-            ys="cora:graph:ys",
-            line_color="cora:edge:color:glyph",
+            xs="coda:graph:xs",
+            ys="coda:graph:ys",
+            line_color="coda:edge:color:glyph",
             line_cap="round",
             source=self.app.cds_edges
         )
@@ -463,10 +463,10 @@ class GraphView(ViewBase):
 
         # vertices        
         pvertices = p.scatter(
-            x="cora:graph:x",
-            y="cora:graph:y",
-            color="cora:color:glyph",
-            marker="cora:marker:glyph",
+            x="coda:graph:x",
+            y="coda:graph:y",
+            color="coda:color:glyph",
+            marker="coda:marker:glyph",
             line_color="gray",
             source=self.app.cds
         )

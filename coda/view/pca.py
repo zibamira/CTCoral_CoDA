@@ -1,5 +1,5 @@
 """
-:mod:`cora.view.pca`
+:mod:`coda.view.pca`
 
 This module implements a helper for computing the PCA dimensionality reduction
 and inspecting it visually.
@@ -17,9 +17,9 @@ import sklearn.decomposition
 import pandas as pd
 import numpy as np
 
-import cora.utils
-from cora.application import Application
-from cora.view.base import ViewBase
+import coda.utils
+from coda.application import Application
+from coda.view.base import ViewBase
 
 
 __all__ = [
@@ -70,7 +70,7 @@ class PCAView(ViewBase):
         """Recompute the PCA when the DF changes."""
         # Update the available columns in the UI and keep the current
         # subset of the columns if possible.
-        columns = cora.utils.scalar_columns(self.app.df, allow_nan=False)
+        columns = coda.utils.scalar_columns(self.app.df, allow_nan=False)
 
         selection = list(self.ui_multichoice_columns.value)
         selection = [column for column in selection if column in columns]

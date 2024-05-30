@@ -1,5 +1,5 @@
 """
-:mod:`cora.tools.graph_tools`
+:mod:`coda.tools.graph_tools`
 
 This module implements special selection tools for graphs that haven't been
 implemented in Bokeh yet. 
@@ -21,7 +21,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
-from cora.application import Application
+from coda.application import Application
 
 
 __all__ = [

@@ -1,5 +1,5 @@
 """
-:mod:`cora.view.map`
+:mod:`coda.view.map`
 
 This module adds a panel view showing the locations associated with
 the samples.
@@ -17,9 +17,9 @@ import xyzservices.providers
 import numpy as np
 import pandas as pd
 
-from cora.application import Application
-import cora.utils
-from cora.view.base import ViewBase
+from coda.application import Application
+import coda.utils
+from coda.view.base import ViewBase
 
 
 __all__ = [
@@ -112,7 +112,7 @@ class MapView(ViewBase):
         the geo location information.
         """
         # Candidates for columns containing geo location data.
-        columns = cora.utils.scalar_columns(self.app.df)
+        columns = coda.utils.scalar_columns(self.app.df)
         self.ui_select_column_longitude.options = columns
         self.ui_select_column_latitude.options = columns
 
@@ -135,7 +135,7 @@ class MapView(ViewBase):
         # The column data source is available, so we may try to create
         # the map view plot. Note that we only have to create the figure
         # one since the actual render data (column data) still remains
-        # in the internal *cora:map:mercatorx* and *cora:map:mercatory*
+        # in the internal *coda:map:mercatorx* and *coda:map:mercatory*
         # columns.
         if self.figure is None:
             self.create_figure()
@@ -147,15 +147,15 @@ class MapView(ViewBase):
         coordinates when the geo location columns are not valid.
         """
         nrows = len(self.app.df.index)
-        self.app.df["cora:map:mercatorx"] = np.full(nrows, np.nan)
-        self.app.df["cora:map:mercatory"] = np.full(nrows, np.nan)
+        self.app.df["coda:map:mercatorx"] = np.full(nrows, np.nan)
+        self.app.df["coda:map:mercatory"] = np.full(nrows, np.nan)
 
         # Schedule a column data source update.
         self.app.push_df_to_cds(vertex=True)
         return None
     
     def update_df(self):
-        """Updates the mercator coordinates in Cora's global ColumnDataSource."""
+        """Updates the mercator coordinates in Coda's global ColumnDataSource."""
         # Check if the location columns exist.
         latitude_column = self.ui_select_column_latitude.value
         longitude_column = self.ui_select_column_longitude.value
@@ -169,8 +169,8 @@ class MapView(ViewBase):
         longitude = self.app.df[longitude_column]
         mercatorx, mercatory = latlong_to_mercator(latitude, longitude)
 
-        self.app.df["cora:map:mercatorx"] = mercatorx
-        self.app.df["cora:map:mercatory"] = mercatory
+        self.app.df["coda:map:mercatorx"] = mercatorx
+        self.app.df["coda:map:mercatory"] = mercatory
 
         # Schedule a column data source update.
         self.app.push_df_to_cds(vertex=True)
@@ -213,10 +213,10 @@ class MapView(ViewBase):
         #       I tried to use Bokeh's CustomJSTransform but could
         #       not make it work.
         pscatter = pfigure.scatter(
-            x=bokeh.transform.jitter("cora:map:mercatorx", width=0.1),
-            y=bokeh.transform.jitter("cora:map:mercatory", width=0.1),
-            color="cora:color:glyph",
-            marker="cora:marker:glyph",
+            x=bokeh.transform.jitter("coda:map:mercatorx", width=0.1),
+            y=bokeh.transform.jitter("coda:map:mercatory", width=0.1),
+            color="coda:color:glyph",
+            marker="coda:marker:glyph",
             line_color="gray",
             source=self.app.cds
         )

@@ -16,9 +16,9 @@ import bokeh.models
 
 import numpy as np
 
-from cora.application import Application
-from cora.view.base import ViewBase
-from cora.utils import FactorMap, scalar_columns
+from coda.application import Application
+from coda.view.base import ViewBase
+from coda.utils import FactorMap, scalar_columns
 
 
 __all__ = [

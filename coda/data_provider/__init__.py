@@ -1,5 +1,5 @@
 """
-:mod:`cora.data_provider`
+:mod:`coda.data_provider`
 
 This package contains small handlers and wrappers for loading 
 data from different sources. 

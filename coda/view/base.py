@@ -1,7 +1,7 @@
 """
-:mod:`cora.view.base`
+:mod:`coda.view.base`
 
-This module contains the base class for all views in the Cora application.
+This module contains the base class for all views in the Coda application.
 A view is just a panel/visualization that can be shown in the central layout
 of the overall application.
 """
@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import bokeh
 import bokeh.models
 
-from cora.application import Application
+from coda.application import Application
 
 
 __all__ = [
@@ -27,7 +27,7 @@ class ViewBase(object):
 
     def __init__(self, app: "Application"):
         """ """
-        #: The Cora :class:`Application` with the data source.
+        #: The Coda :class:`Application` with the data source.
         self.app = app
 
         #: A layout that is added to the sidebar while this view
@@ -37,7 +37,7 @@ class ViewBase(object):
             sizing_mode="stretch_width"
         )
 
-        #: A layout that is shown as column (panel) in the Cora
+        #: A layout that is shown as column (panel) in the Coda
         #: appplication. 
         self.layout_panel = bokeh.models.Column(
             sizing_mode="stretch_both"
@@ -72,8 +72,8 @@ class ViewBase(object):
         the data provider. The view must add view specific render information again to
         the global data frames in this step.
         
-        :seealso: :attr:`~cora.application.Application.df`,\
-                :attr:`~cora.application.Application.df_edges`
+        :seealso: :attr:`~coda.application.Application.df`,\
+                :attr:`~coda.application.Application.df_edges`
         """
         return None
     
@@ -84,7 +84,7 @@ class ViewBase(object):
         the data frames.
 
         :seealso: :meth:`reload_df`
-                :attr:`~cora.application.Application.cds`,\
-                :attr:`~cora.application.Application.cds_edges`
+                :attr:`~coda.application.Application.cds`,\
+                :attr:`~coda.application.Application.cds_edges`
         """
         return None

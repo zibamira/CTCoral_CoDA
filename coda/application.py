@@ -1,5 +1,5 @@
 """
-:mod:`cora.app`
+:mod:`coda.app`
 
 Bootstraps and launches the Bokeh application.
 """
@@ -17,10 +17,10 @@ import bokeh.document
 
 import pandas as pd
 
-import cora.utils
-from cora.utils import FactorMap
-from cora.data_provider import DataProvider
-from cora.data_provider.amira import LABELS256 as Amira_LABELS256
+import coda.utils
+from coda.utils import FactorMap
+from coda.data_provider import DataProvider
+from coda.data_provider.amira import LABELS256 as Amira_LABELS256
 
 
 def init_logging():
@@ -76,7 +76,7 @@ class Application(object):
 
         #: The raw pandas DataFrame input for the edges and 
         #: edge attribute information, enriched with glyph and
-        #: styling data by Cora.
+        #: styling data by Coda.
         self.df_edges = data_provider.df_edges
 
 
@@ -96,18 +96,17 @@ class Application(object):
 
         #: The vertex color map.
         self.fmap_color = FactorMap(
-            name="cora:color",
+            name="coda:color",
             df=self.df,
             cds=self.cds,
             column_name=None,
             palette=Amira_LABELS256[1:],
-            #palette=cora.utils.matplotlib_palette("Set2"),
             mode=FactorMap.Mode.CYCLE
         )
 
         #: The vertex glyph map.
         self.fmap_marker = FactorMap(
-            name="cora:marker",
+            name="coda:marker",
             df=self.df,
             cds=self.cds,
             column_name=None,
@@ -123,7 +122,7 @@ class Application(object):
 
         #: The edge color map.
         self.fmap_color_edges = FactorMap(
-            name="cora:edge:color",
+            name="coda:edge:color",
             df=self.df_edges,
             cds=self.cds_edges,
             column_name=None,
@@ -255,9 +254,9 @@ class Application(object):
         self.df_edges = self.data_provider.df_edges
 
         # Update the glyph menus.
-        self.ui_select_color.options = ["None"] + cora.utils.label_columns(self.df)
-        self.ui_select_marker.options = ["None"] + cora.utils.label_columns(self.df)
-        self.ui_select_color_edges.options = ["None"] + cora.utils.label_columns(self.df_edges)
+        self.ui_select_color.options = ["None"] + coda.utils.label_columns(self.df)
+        self.ui_select_marker.options = ["None"] + coda.utils.label_columns(self.df)
+        self.ui_select_color_edges.options = ["None"] + coda.utils.label_columns(self.df_edges)
 
         self.update_colormap()
         self.update_markermap()
@@ -355,7 +354,7 @@ class Application(object):
         nedges = len(self.df_edges)
 
         children = [
-            bokeh.models.Div(text="<strong>Cora</strong>", align="center"),
+            bokeh.models.Div(text="<strong>Coda</strong>", align="center"),
             self.ui_button_reload,
             bokeh.models.Div(text=f"{nvertices} vertices", align="start"),
             bokeh.models.Div(text=f"{nedges} edges", align="start"),
@@ -401,43 +400,43 @@ class Application(object):
         application.
         """
         if view_type == "SPLOM":
-            from cora.view.splom import SplomView
+            from coda.view.splom import SplomView
             return SplomView(self)
         
         if view_type == "Spreadsheet":
-            from cora.view.table import TableView
+            from coda.view.table import TableView
             return TableView(self)
         
         if view_type == "Graph":
-            from cora.view.graph import GraphView
+            from coda.view.graph import GraphView
             return GraphView(self)
         
         if view_type == "Flower":
-            from cora.view.flower import FlowerView
+            from coda.view.flower import FlowerView
             return FlowerView(self)
 
         if view_type == "Histogram":
-            from cora.view.histogram import HistogramView
+            from coda.view.histogram import HistogramView
             return HistogramView(self)
 
         if view_type == "Scatter":
-            from cora.view.scatter import ScatterView
+            from coda.view.scatter import ScatterView
             return ScatterView(self)
 
         if view_type == "Map":
-            from cora.view.map import MapView
+            from coda.view.map import MapView
             return MapView(self)
 
         if view_type == "UMAP":
-            from cora.view.umap import UMAPView
+            from coda.view.umap import UMAPView
             return UMAPView(self)
         
         if view_type == "PCA":
-            from cora.view.pca import PCAView
+            from coda.view.pca import PCAView
             return PCAView(self)
 
         if view_type == "Statistics":
-            from cora.view.statistics import StatisticsView
+            from coda.view.statistics import StatisticsView
             return StatisticsView(self)
         return None
 

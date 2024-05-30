@@ -18,11 +18,11 @@ import bokeh.layouts
 
 import numpy as np
 
-from cora.application import Application
-from cora.view.base import ViewBase
-from cora.view.histogram import HistogramPlot
-import cora.utils
-from cora.utils import FactorMap
+from coda.application import Application
+from coda.view.base import ViewBase
+from coda.view.histogram import HistogramPlot
+import coda.utils
+from coda.utils import FactorMap
 
 
 __all__ = [
@@ -77,7 +77,7 @@ class SplomView(ViewBase):
 
     def reload_df(self):
         """Reload the dataframe."""
-        columns = cora.utils.scalar_columns(self.app.df)
+        columns = coda.utils.scalar_columns(self.app.df)
 
         selection = self.ui_multichoice_columns.value
         selection = [column for column in selection if column in columns]
@@ -191,8 +191,8 @@ class SplomView(ViewBase):
             x=column_name_x,
             y=column_name_y, 
             source=self.app.cds,
-            color="cora:color:glyph",
-            marker="cora:marker:glyph",
+            color="coda:color:glyph",
+            marker="coda:marker:glyph",
             line_color="gray"
         )
 

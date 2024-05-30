@@ -1,5 +1,5 @@
 """
-:mod:`cora.view.statistics`
+:mod:`coda.view.statistics`
 
 This module provides a table with statistics of the current selection.
 """
@@ -9,9 +9,9 @@ from typing import List
 import bokeh
 import bokeh.models
 
-from cora.application import Application
-from cora.view.base import ViewBase
-import cora.utils
+from coda.application import Application
+from coda.view.base import ViewBase
+import coda.utils
 
 
 __all__ = [
@@ -61,7 +61,7 @@ class StatisticsView(ViewBase):
         Only the current selection is considered when computing the statistics.
         """
         # Only compute statistics for scalar columns.
-        data_columns = cora.utils.scalar_columns(self.app.df)
+        data_columns = coda.utils.scalar_columns(self.app.df)
         df = self.app.df[data_columns]
 
         # Only compute the statistics for the current selection.

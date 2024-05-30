@@ -1,5 +1,5 @@
 """
-:mod:`cora.flower`
+:mod:`coda.flower`
 
 This module implements flower glyphs. Not really glyphs, but a single plot
 which shows a flower glyph. The flower petals are either wedges (fast
@@ -19,9 +19,9 @@ import bokeh.palettes
 import pandas as pd
 import numpy as np
 
-from cora.application import Application
-from cora.view.base import ViewBase
-import cora.utils
+from coda.application import Application
+from coda.view.base import ViewBase
+import coda.utils
 
 
 __all__ = [
@@ -580,7 +580,7 @@ class FlowerView(ViewBase):
 
     def reload_df(self):
         """Update the UI to match the available columns in the dataset."""
-        columns = cora.utils.scalar_columns(self.app.df)
+        columns = coda.utils.scalar_columns(self.app.df)
 
         selection = self.ui_multichoice_columns.value
         selection = [column for column in selection if column in columns]

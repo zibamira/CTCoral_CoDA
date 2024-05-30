@@ -19,20 +19,20 @@ import bokeh.server.server
 this_dir = pathlib.Path(__file__).absolute().parent
 sys.path.append(this_dir.parent)
 
-import cora
-import cora.application
-import cora.data_provider
+import coda
+import coda.application
+import coda.data_provider
 
 
 # Create the parser.
-parser = argparse.ArgumentParser("cora")
+parser = argparse.ArgumentParser("coda")
 subparsers = parser.add_subparsers(
     dest="data_provider", required=True
 )
 
 parser.add_argument(
     "--start-browser", action="store_const", const=True,
-    help="Open a new tab in the browser with cora."
+    help="Open a new tab in the browser with coda."
 )
 parser.add_argument(
     "--port", action="store", type=int, default=5006,
@@ -55,11 +55,11 @@ fs_parser.add_argument(
 )
 fs_parser.add_argument(
     "--vertex-selection", action="store", type=pathlib.Path,
-    help="Path to the CSV file Cora will write the current vertex selection to."
+    help="Path to the CSV file Coda will write the current vertex selection to."
 )
 fs_parser.add_argument(
     "--edge-selection", action="store", type=pathlib.Path,
-    help="Path to the CSV file Cora will write the current edge selection to."
+    help="Path to the CSV file Coda will write the current edge selection to."
 )
 
 # Create a parser for the development, random data provider.
@@ -73,9 +73,9 @@ amira_parser = subparsers.add_parser(
     name="amira",
     help=(
         "Use a shared directory linked to an active Amira project. "
-        "This data provider integrates with the hxcora package. "
-        "If no 'directory' is given, then CORA will look for the latest "
-        "Amira instance that created an Amira-Cora directory. This works "
+        "This data provider integrates with the hxcoda package. "
+        "If no 'directory' is given, then CODA will look for the latest "
+        "Amira instance that created an Amira-Coda directory. This works "
         "well if a single Amira instance is running."
     )
 )
@@ -89,10 +89,10 @@ args = parser.parse_args()
 
 # Setup the selected data provider.
 if args.data_provider == "random":
-    provider = cora.data_provider.RandomDataProvider()
+    provider = coda.data_provider.RandomDataProvider()
 
 elif args.data_provider == "filesystem":
-    provider = cora.data_provider.FilesystemDataProvider()
+    provider = coda.data_provider.FilesystemDataProvider()
     if args.vertex:
         for path in args.vertex:
             provider.add_vertex_csv(path)
@@ -105,30 +105,30 @@ elif args.data_provider == "filesystem":
 
 elif args.data_provider == "amira":
     if not args.directory:
-        args.directory = cora.data_provider.AmiraDataProvider.zero_conf_amira_cora_directory()
+        args.directory = coda.data_provider.AmiraDataProvider.zero_conf_amira_coda_directory()
         if not args.directory:
             print("Could not find an active Amira instance.")
             print("Use the '--directory' option to manually set a data directory.")
             exit(1)
-    provider = cora.data_provider.AmiraDataProvider(args.directory)
+    provider = coda.data_provider.AmiraDataProvider(args.directory)
     
 else:
     parser.print_help()
     exit(1)
 
 
-def cora_doc(doc):
-    """Creates the cora document and application."""
-    app = cora.application.Application(provider, doc)
+def coda_doc(doc):
+    """Creates the coda document and application."""
+    app = coda.application.Application(provider, doc)
     app.reload()
 
     doc.add_root(app.layout)
-    doc.set_title("Cora - The Coral Explorer")
+    doc.set_title("Coda - The Codal Explorer")
     return None
 
 
 server = bokeh.server.server.Server(
-    {"/": cora_doc},
+    {"/": coda_doc},
     num_procs=1,
     port=args.port
 )

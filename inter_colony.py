@@ -63,24 +63,24 @@ colony_infos["Niwa-148046"] = {
 }
 
 
-# Merge all "corals.csv" spreadsheets into one.
+# Merge all "calices.csv" spreadsheets into one.
 prefixes = []
-dfs_corals = []
+dfs_calices = []
 dfs_corallites = []
 dfs_framework = []
 dfs_info = []
 
 for name, info in colony_infos.items():
-    df_corals = pd.read_csv(info["data_dir"] / "corals.csv", header=1)
+    df_calices = pd.read_csv(info["data_dir"] / "calices.csv", header=1)
     df_corallites = pd.read_csv(info["data_dir"] / "corallites.csv", header=1)
     # df_framework = pd.read_csv(info["data_dir"] / "framework.csv", header=1)
     
     # if "Node.label" in df_framework:
     #     df_framework["Node.Label"] = df_framework["Node.label"]
 
-    nrows = len(df_corals.index)
-    if len(df_corals.index) != nrows:
-        print(f"{name} corals has incosistent number of rows {len(df_corals.index)}, expected {nrows}.")
+    nrows = len(df_calices.index)
+    if len(df_calices.index) != nrows:
+        print(f"{name} calices has incosistent number of rows {len(df_calices.index)}, expected {nrows}.")
     if len(df_corallites.index) != nrows:
         print(f"{name} corallites has incosistent number of rows {len(df_corallites.index)}, expected {nrows}.")
     # if len(df_framework.index) != nrows:
@@ -91,29 +91,29 @@ for name, info in colony_infos.items():
         "longitude": [info["longitude"] for i in range(nrows)],
         "elevation": [info["elevation"] for i in range(nrows)],
         "name": [name for i in range(nrows)],
-        "idx_colony": [len(dfs_corals) for i in range(nrows)]
+        "idx_colony": [len(dfs_calices) for i in range(nrows)]
     })
 
     prefix = f"{name:}"
 
     prefixes.append(prefix)
-    dfs_corals.append(df_corals)
+    dfs_calices.append(df_calices)
     dfs_corallites.append(df_corallites)
     # dfs_framework.append(df_framework)
     dfs_info.append(df_info)
 
 
 # Check if we need to get rid of some columns.
-columns_corals = set.intersection(*[set(df.columns) for df in dfs_corals])
+columns_calices = set.intersection(*[set(df.columns) for df in dfs_calices])
 columns_corallites = set.intersection(*[set(df.columns) for df in dfs_corallites])
 # columns_framework = set.intersection(*[set(df.columns) for df in dfs_framework])
 columns_info = set.intersection(*[set(df.columns) for df in dfs_info])
 
 # Give a warning when we remove a column.
-for prefix, df in zip(prefixes, dfs_corals):
-    missing_columns = set(df.columns) - columns_corals
+for prefix, df in zip(prefixes, dfs_calices):
+    missing_columns = set(df.columns) - columns_calices
     if missing_columns:
-        print(f"The corals dataframe for '{prefix}' misses the following columns: {missing_columns}")
+        print(f"The calices dataframe for '{prefix}' misses the following columns: {missing_columns}")
 
 for prefix, df in zip(prefixes, dfs_corallites):
     missing_columns = set(df.columns) - columns_corallites
@@ -131,21 +131,21 @@ for prefix, df in zip(prefixes, dfs_info):
         print(f"The info dataframe for '{prefix}' misses the following columns: {missing_columns}")
 
 # Sort the columns by name.
-columns_corals = list(sorted(columns_corals))
+columns_calices = list(sorted(columns_calices))
 columns_corallites = list(sorted(columns_corallites))
 # columns_framework = list(sorted(columns_framework))
 columns_info = list(sorted(columns_info))
 
 # Concatenate all dataframes.
-df_corals = pd.concat(df[columns_corals] for prefix, df in zip(prefixes, dfs_corals))
+df_calices = pd.concat(df[columns_calices] for prefix, df in zip(prefixes, dfs_calices))
 df_corallites = pd.concat(df[columns_corallites] for prefix, df in zip(prefixes, dfs_corallites))
 # df_framework = pd.concat(df[columns_framework] for prefix, df in zip(prefixes, dfs_framework))
 df_info = pd.concat(df[columns_info] for prefix, df in zip(prefixes, dfs_info))
 
 # Save the compiled spreadsheets.
-with (output_dir / "vertex_corals.csv").open("w") as file:
+with (output_dir / "vertex_calices.csv").open("w") as file:
     file.write("\"CORA compilation\"\n")
-    df_corals.to_csv(file, sep=",", header=True, index=False)
+    df_calices.to_csv(file, sep=",", header=True, index=False)
 
 with (output_dir / "vertex_corallites.csv").open("w") as file:
     file.write("\"CORA compilation\"\n")

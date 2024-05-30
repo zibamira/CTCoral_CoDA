@@ -1,5 +1,5 @@
 """
-:mod:`cora.data_provider.amira`
+:mod:`coda.data_provider.amira`
 
 This module implements a special filesystem based data provider, making
 the interaction with Amira smoother and use of the *hxipc* package.
@@ -13,7 +13,7 @@ import watchdog
 import watchdog.observers
 import watchdog.events
 
-from cora.data_provider.filesystem import FilesystemDataProvider
+from coda.data_provider.filesystem import FilesystemDataProvider
 
 
 __all__ = [
@@ -92,55 +92,55 @@ LABELS256 = [
 
 class AmiraDataProvider(FilesystemDataProvider):
     """A simplified file system data provider that is tuned 
-    to the Amira HxCora interface.
+    to the Amira HxCoda interface.
     
     The provider watches a single directory and adds csv spreadsheets
-    to Cora based on filename conventions.
+    to Coda based on filename conventions.
 
     *   Filenames matching ``vertex_*.csv`` are treated as vertex data.
     *   Filenames matching ``edge_*.csv`` are treated as edge data.
 
-    The current Cora selection is stored in ``cora_vertex_selection.csv``
-    and ``cora_edge_selection.csv``.
+    The current Coda selection is stored in ``coda_vertex_selection.csv``
+    and ``coda_edge_selection.csv``.
     """
 
     re_vertex_csv = re.compile("vertex_(?P<prefix>.*).csv")
     re_edge_csv = re.compile("edge_(?P<prefix>.*).csv")
     re_colormap_csv = re.compile("colormap_(?P<prefix>.*).csv")
 
-    def __init__(self, amira_cora_directory = pathlib.Path):
+    def __init__(self, amira_coda_directory = pathlib.Path):
         super().__init__()
 
-        #: The shared directory between Amira and Cora.
-        self.amira_cora_directory = amira_cora_directory
-        self.watch_directory(amira_cora_directory)
+        #: The shared directory between Amira and Coda.
+        self.amira_coda_directory = amira_coda_directory
+        self.watch_directory(amira_coda_directory)
 
         # Set the default selection paths.
-        self.path_edge_selection = amira_cora_directory / "cora_edge_selection.csv"
-        self.path_vertex_selection = amira_cora_directory / "cora_vertex_selection.csv"
+        self.path_edge_selection = amira_coda_directory / "coda_edge_selection.csv"
+        self.path_vertex_selection = amira_coda_directory / "coda_vertex_selection.csv"
 
-        self.path_edge_colormap = amira_cora_directory / "cora_edge_colormap.csv"
-        self.path_vertex_colormap = amira_cora_directory / "cora_vertex_colormap.csv"
+        self.path_edge_colormap = amira_coda_directory / "coda_edge_colormap.csv"
+        self.path_vertex_colormap = amira_coda_directory / "coda_vertex_colormap.csv"
 
         # Perform an initial search.
-        for path in self.amira_cora_directory.iterdir():
+        for path in self.amira_coda_directory.iterdir():
             self.try_add_vertex(path)
             self.try_add_edge(path)
         return None
 
     @classmethod
-    def zero_conf_amira_cora_directory(self):
+    def zero_conf_amira_coda_directory(self):
         """Look for the latest directory in the system temporary directory,
-        e.g. `/tmp` for an `amira_cora_*` directory. The last one created
+        e.g. `/tmp` for an `amira_coda_*` directory. The last one created
         will be returned.
 
         This zero-conf approach is a convention between the Amira package
-        *hxcora* and *py_cora*.
+        *hxcoda* and *py_coda*.
         """
         temp_dir = pathlib.Path(tempfile.gettempdir())
         paths = [
             path \
-            for path in temp_dir.glob("amira_cora_*")\
+            for path in temp_dir.glob("amira_coda_*")\
             if path.is_dir()
         ]
         if not paths:

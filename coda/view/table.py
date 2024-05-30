@@ -1,5 +1,5 @@
 """
-:mod:`cora.view.table`
+:mod:`coda.view.table`
 
 This module implements a table (spreadsheet) view using Bokeh's 
 :class:`~bokeh.models.DataTable` widget.
@@ -10,9 +10,9 @@ from typing import List
 import bokeh
 import bokeh.models
 
-from cora.application import Application
-from cora.view.base import ViewBase
-from cora.utils import data_columns
+from coda.application import Application
+from coda.view.base import ViewBase
+from coda.utils import data_columns
 
 
 __all__ = [

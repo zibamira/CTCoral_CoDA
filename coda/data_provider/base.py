@@ -1,8 +1,8 @@
 """
-:mod:`cora.data_provider.base`
+:mod:`coda.data_provider.base`
 
 This module implements the :class:`DataProvider` interface which is a simple
-abstraction allowing to adapt different data source into Cora, pre-process
+abstraction allowing to adapt different data source into Coda, pre-process
 and aggregate them. 
 """
 
@@ -21,11 +21,11 @@ __all__ = [
 
 
 class DataProvider(object):
-    """Wraps and aggreagates the raw input data to Cora. Multiple
+    """Wraps and aggreagates the raw input data to Coda. Multiple
     spreadsheets are combined into a single data frame.
     
     When changes to the original dataframes are detected, they can be
-    propagated to Cora so that they are either reloaded automatic
+    propagated to Coda so that they are either reloaded automatic
     or after a user confirmation.
     """
 
@@ -48,13 +48,13 @@ class DataProvider(object):
         #: in the edge dataframe.
         self.label_field_edges = np.empty(0)
 
-        #: A set of colormaps that may be used inside cora.
+        #: A set of colormaps that may be used inside coda.
         self.colormaps = dict()
 
         #: This signal is emitted when a resource changed. The emitter
         #: may be called from a different thread.
         #:
-        #: :seealso: meth:~cora.application.Application.on_data_provider_change`
+        #: :seealso: meth:~coda.application.Application.on_data_provider_change`
         self.on_change = blinker.Signal()
         return None
 
@@ -67,7 +67,7 @@ class DataProvider(object):
         return None
 
     def write_vertex_selection(self, indices):
-        """This method is called by the cora application when the current vertex
+        """This method is called by the coda application when the current vertex
         selection changed. 
         
         Subclasses may override this method and store the current selection 
@@ -76,7 +76,7 @@ class DataProvider(object):
         return None
     
     def write_edge_selection(self, indices):
-        """This method is called by the cora application when the current edge
+        """This method is called by the coda application when the current edge
         selection changed.
         
         Subclasses may override this method and store the current selection
@@ -85,7 +85,7 @@ class DataProvider(object):
         return None
 
     def write_vertex_colormap(self, colors):
-        """This method is called by the cora application when the vertex colormap
+        """This method is called by the coda application when the vertex colormap
         changed.
         
         Subclasses may override this method and store the current selection
@@ -94,7 +94,7 @@ class DataProvider(object):
         return None
 
     def write_edge_colormap(self, colors):
-        """This method is called by the cora application when the edge colormap
+        """This method is called by the coda application when the edge colormap
         changed.
         
         Subclasses may override this method and store the current selection
@@ -103,6 +103,6 @@ class DataProvider(object):
         return None
 
     def notify_change(self):
-        """Notifies Cora that the data changed and needs to be reloaded."""
+        """Notifies Coda that the data changed and needs to be reloaded."""
         self.on_change.send(self)
         return None

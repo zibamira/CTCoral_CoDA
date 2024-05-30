@@ -1,8 +1,8 @@
 """
-:mod:`cora.data_provider.filesystem`
+:mod:`coda.data_provider.filesystem`
 
 This module implements a data provider using files stored in the local filesystem.
-The files are watched for modifications so that Cora can be synchronized automatic
+The files are watched for modifications so that Coda can be synchronized automatic
 with changes occuring in the data.
 """
 
@@ -16,7 +16,7 @@ import watchdog
 import watchdog.observers
 import watchdog.events
 
-from cora.data_provider.base import DataProvider
+from coda.data_provider.base import DataProvider
 
 
 __all__ = [
@@ -325,7 +325,7 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
     def on_modified(self, event: watchdog.events.FileSystemEvent):
         """Watchdog callback, called when a file or directory was modified.
         
-        A resource was modified, so we mark it as dirty, notify the Cora
+        A resource was modified, so we mark it as dirty, notify the Coda
         application and eventually trigger a reload.
         """
         src_path = pathlib.Path(event.src_path).absolute()
@@ -442,7 +442,7 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
         # Save the CSV with an extra Amira header.
         with open(self.path_vertex_selection, "w") as file:
-            file.write("\"CORA vertex selection\"\n")
+            file.write("\"CODA vertex selection\"\n")
             df.to_csv(file, sep=",", header=True, index=False)
         return None
     
@@ -466,7 +466,7 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
         # Save the CSV with an extra Amira header.
         with open(self.path_edge_selection, "w") as file:
-            file.write("\"CORA edge selection\"\n")
+            file.write("\"CODA edge selection\"\n")
             df.to_csv(file, sep=",", header=True, index=False)
         return None
     
@@ -482,7 +482,7 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
         # Save the CSV with an extra Amira header.
         with open(self.path_vertex_colormap, "w") as file:
-            file.write("\"CORA vertex colormap\"\n")
+            file.write("\"CODA vertex colormap\"\n")
             df.to_csv(file, sep=",", header=True, index=False)
         return None
 
@@ -498,6 +498,6 @@ class FilesystemDataProvider(DataProvider, watchdog.events.FileSystemEventHandle
 
         # Save the CSV with an extra Amira header.
         with open(self.path_edge_colormap, "w") as file:
-            file.write("\"CORA edge colormap\"\n")
+            file.write("\"CODA edge colormap\"\n")
             df.to_csv(file, sep=",", header=True, index=False)
         return None

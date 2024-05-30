@@ -38,7 +38,7 @@ def data_columns(df):
     """Returns all data columns in the data frame, sorted by their names
     in natural order.
     """
-    return list(natsorted(name for name in df.columns if not name.startswith("cora:")))
+    return list(natsorted(name for name in df.columns if not name.startswith("coda:")))
 
 
 def scalar_columns(df, allow_nan=True):
@@ -130,11 +130,11 @@ class FactorMap(object):
         )
         fmap.update_cds()
 
-        # The column ``cora:factor_map:glyph`` contains the color
+        # The column ``coda:factor_map:glyph`` contains the color
         # for each row in the data frame.
         p = bokeh.plotting.figure()
         p.scatter(
-            x="x", y="y", source=self.cds, fill_color="cora:factor_map:glyph"
+            x="x", y="y", source=self.cds, fill_color="coda:factor_map:glyph"
         )
     """
 

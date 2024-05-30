@@ -1,5 +1,5 @@
 """
-:mod:`cora.view.umap`
+:mod:`coda.view.umap`
 
 This module implements a view for computing the UMAP embedding
 on a user defined subset of the input columns. UMAP is a modern, non-linear
@@ -23,9 +23,9 @@ import pandas as pd
 import numpy as np
 import umap
 
-import cora.utils
-from cora.application import Application
-from cora.view.base import ViewBase
+import coda.utils
+from coda.application import Application
+from coda.view.base import ViewBase
 
 
 __all__ = [
@@ -121,7 +121,7 @@ class UMAPView(ViewBase):
 
     def reload_df(self):
         """Reload the data frame and recompute the Umap embedding."""
-        columns = cora.utils.scalar_columns(self.app.df)
+        columns = coda.utils.scalar_columns(self.app.df)
         
         selection = self.ui_columns.value
         selection = [column for column in selection if column in columns]

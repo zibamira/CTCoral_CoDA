@@ -1,5 +1,5 @@
 """
-:mod:`cora.data_provider.random`
+:mod:`coda.data_provider.random`
 
 This module implements a data provider generating random data,
 mainly for testing and development purposes.
@@ -12,7 +12,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from cora.data_provider.base import DataProvider
+from coda.data_provider.base import DataProvider
 
 
 __all__ = [

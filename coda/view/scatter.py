@@ -1,7 +1,7 @@
 """
-:mod:`cora.view.legend`
+:mod:`coda.view.scatter`
 
-This module adds a panel view showing the legend for the current glyph mapping.
+This module adds a panel view displaying a single scatter plot.
 """
 
 from typing import List
@@ -9,21 +9,39 @@ from typing import List
 import bokeh
 import bokeh.models
 
-from cora.application import Application
-from cora.view.base import ViewBase
-from cora.utils import scalar_columns
+from coda.application import Application
+from coda.view.base import ViewBase
+from coda.utils import scalar_columns
 
 
 __all__ = [
-    "LegendView"
+    "ScatterView"
 ]
 
 
-class LegendView(ViewBase):
-    """A panel with a single legend view."""
+class ScatterView(ViewBase):
+    """A panel with a single scatter view plot."""
 
     def __init__(self, app: Application):
         super().__init__(app)
+
+        #: UI for selecting the x column.
+        self.ui_select_column_x = bokeh.models.Select(
+            title="X Column",
+            sizing_mode="stretch_width"
+        )
+        self.ui_select_column_x.on_change(
+            "value", self.on_ui_select_column_x_change
+        )
+
+        #: UI for selecting the y column.
+        self.ui_select_column_y = bokeh.models.Select(
+            title="Y Column",
+            sizing_mode="stretch_width"
+        )
+        self.ui_select_column_y.on_change(
+            "value", self.on_ui_select_column_y_change
+        )
 
         #: The figure displaying the scatter plot.
         self.figure: bokeh.models.Model = None
@@ -32,16 +50,34 @@ class LegendView(ViewBase):
         self.pscatter: bokeh.models.Model = None
 
         # Sidebar layout.
-        self.layout_sidebar.children = []
+        self.layout_sidebar.children = [
+            self.ui_select_column_x,
+            self.ui_select_column_y
+        ]
         return None
-
+    
 
     def reload_df(self):
         """Updates the UI to match the available columns."""
+        # Filter out columns that cannot be displayed in a scatter plot.
+        columns = scalar_columns(self.app.df)
+
+        self.ui_select_column_x.options = columns
+        self.ui_select_column_y.options = columns
+
+        if self.ui_select_column_x.value not in columns:
+            default_column = columns[0] if columns else None
+            self.ui_select_column_x.value = default_column
+
+        if self.ui_select_column_y.value not in columns:
+            default_column = columns[min(1, len(columns))] if columns else None
+            self.ui_select_column_y.value = default_column
         return None
 
     def reload_cds(self):
         """Update the plot if needed."""
+        if self.figure is None:
+            self.update_plot()
         return None
 
 
@@ -55,7 +91,7 @@ class LegendView(ViewBase):
         pfigure = bokeh.plotting.figure(
             title="Scatter",
             sizing_mode="stretch_both",
-            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover",
+            tools="pan,lasso_select,poly_select,box_zoom,wheel_zoom,reset,hover,save",
             toolbar_location="above",
             tooltips=[
                 ("index", "$index"),
@@ -70,8 +106,8 @@ class LegendView(ViewBase):
             x=colx, 
             y=coly,
             source=self.app.cds,
-            color="cora:color:glyph",
-            marker="cora:marker:glyph",
+            color="coda:color:glyph",
+            marker="coda:marker:glyph",
             line_color="gray"
         )
 
@@ -108,7 +144,3 @@ class LegendView(ViewBase):
         #      us to just change the *y* field of :attr:`pscatter`.
         self.update_plot()
         return None
-
-
-# TODO: Whisker
-# TODO: Legend
