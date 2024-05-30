@@ -19,7 +19,7 @@ dependencies = [
     "pydot",
     "scipy",
     "scikit-image",
-    "sklearn",
+    "scikit-learn",
     "umap-learn",
     "xyzservices",
     "watchdog"
