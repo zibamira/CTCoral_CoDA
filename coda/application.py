@@ -354,7 +354,7 @@ class Application(object):
         nedges = len(self.df_edges)
 
         children = [
-            bokeh.models.Div(text="<strong>Coda</strong>", align="center"),
+            bokeh.models.Div(text="<strong>CoDA</strong>", align="center"),
             self.ui_button_reload,
             bokeh.models.Div(text=f"{nvertices} vertices", align="start"),
             bokeh.models.Div(text=f"{nedges} edges", align="start"),

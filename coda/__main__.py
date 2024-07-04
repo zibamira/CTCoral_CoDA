@@ -55,11 +55,11 @@ fs_parser.add_argument(
 )
 fs_parser.add_argument(
     "--vertex-selection", action="store", type=pathlib.Path,
-    help="Path to the CSV file Coda will write the current vertex selection to."
+    help="Path to the CSV file CoDA will write the current vertex selection to."
 )
 fs_parser.add_argument(
     "--edge-selection", action="store", type=pathlib.Path,
-    help="Path to the CSV file Coda will write the current edge selection to."
+    help="Path to the CSV file CoDA will write the current edge selection to."
 )
 
 # Create a parser for the development, random data provider.
@@ -74,8 +74,8 @@ amira_parser = subparsers.add_parser(
     help=(
         "Use a shared directory linked to an active Amira project. "
         "This data provider integrates with the hxcoda package. "
-        "If no 'directory' is given, then CODA will look for the latest "
-        "Amira instance that created an Amira-Coda directory. This works "
+        "If no 'directory' is given, then CoDA will look for the latest "
+        "Amira instance that created an Amira-CoDA directory. This works "
         "well if a single Amira instance is running."
     )
 )
@@ -123,7 +123,7 @@ def coda_doc(doc):
     app.reload()
 
     doc.add_root(app.layout)
-    doc.set_title("Coda - The Codal Explorer")
+    doc.set_title("CoDA - The Coral Explorer")
     return None
 
 
