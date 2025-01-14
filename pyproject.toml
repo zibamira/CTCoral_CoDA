@@ -28,6 +28,12 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/AdorablePotato/coda"
 
+[build-system]
+requires = [
+    "setuptools>=60",
+    "setuptools-scm>=8.0"
+]
+
 [tool.setuptools]
 packages = [
     "coda",
@@ -36,3 +42,8 @@ packages = [
     "coda.tools"
 ]
 
+[tool.setuptools.package-data]
+tools = [
+    "*.ts", 
+    "*.png"
+]
