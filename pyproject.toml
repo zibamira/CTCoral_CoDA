@@ -32,6 +32,7 @@ dependencies = [
 packages = [
     "coda",
     "coda.data_provider",
-    "coda.view"
+    "coda.view",
+    "coda.tools"
 ]
 
