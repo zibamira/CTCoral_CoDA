@@ -382,6 +382,13 @@ class GraphView(ViewBase):
         p.xgrid.visible = False
         p.ygrid.visible = False
 
+        p.title.text_font_size = f"{self.app.ui_slider_font_size.value}pt"
+        self.app.ui_slider_font_size.js_on_change(
+            "value", bokeh.models.callbacks.CustomJS(
+                args=dict(title=p.title), 
+                code="title.text_font_size = `${cb_obj.value}pt`"
+        ))
+
         # ancestor_tool = AncestorTool()
         # ancestor_tool.source_vertices = self.app.cds
         # ancestor_tool.source_edges = self.app.cds_edges

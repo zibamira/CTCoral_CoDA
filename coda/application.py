@@ -182,6 +182,14 @@ class Application(object):
         )
 
 
+        # -- UI controls annotations --
+
+        self.ui_slider_font_size = bokeh.models.Slider(
+            title="Font Size", start=8, end=32, value=11, step=1,
+            show_value=False
+        )
+
+
         # -- Views --
 
         VIEWS = [
@@ -221,10 +229,10 @@ class Application(object):
         )
 
         #: The :class:`view <ViewBase>` shown in the left panel. 
-        self.panel_right: ViewBase = None
+        self.panel_right: "ViewBase" = None
 
         #: The :class:`view <ViewBase>` shown in the right panel.
-        self.panel_left: ViewBase = None
+        self.panel_left: "ViewBase" = None
 
 
         # -- Layout --
@@ -366,7 +374,9 @@ class Application(object):
             bokeh.models.Div(text="<strong>Edge Appearance</strong>", align="center"),
             self.ui_select_color_edges,
             self.ui_slider_edge_size,
-            self.ui_slider_edge_opacity
+            self.ui_slider_edge_opacity,
+            bokeh.models.Div(text="<strong>Advanced</strong>", align="center"),
+            self.ui_slider_font_size
         ]
 
         children.append(bokeh.models.Div(text="<strong>Left Panel</strong>", align="center"))
