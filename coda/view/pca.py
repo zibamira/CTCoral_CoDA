@@ -108,6 +108,8 @@ class PCAView(ViewBase):
 
         # Update the plot showing the explained variance.
         self.update_cds_variance(reducer.explained_variance_ratio_)
+        print(reducer.explained_variance_ratio_)
+        print(reducer.explained_variance_)
 
         # Schedule an update of the Bokeh column data source.
         self.app.push_df_to_cds(vertex=True)

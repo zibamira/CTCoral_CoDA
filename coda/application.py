@@ -15,6 +15,7 @@ import bokeh.models
 import bokeh.plotting
 import bokeh.document
 
+import matplotlib
 import pandas as pd
 
 import coda.utils
@@ -35,6 +36,12 @@ def init_logging():
 
     logging.basicConfig(handlers=[console], level=logging.INFO)
     return None
+
+
+#: The default palette for the colormap.
+DEFAULT_VERTEX_PALETTE = Amira_LABELS256[1:]
+DEFAULT_EDGE_PALETTE = Amira_LABELS256
+# DEFAULT_PALETTE = coda.utils.matplotlib_palette("Set2")
 
 
 class Application(object):
@@ -100,7 +107,7 @@ class Application(object):
             df=self.df,
             cds=self.cds,
             column_name=None,
-            palette=Amira_LABELS256[1:],
+            palette=DEFAULT_VERTEX_PALETTE,
             mode=FactorMap.Mode.CYCLE
         )
 
@@ -126,7 +133,7 @@ class Application(object):
             df=self.df_edges,
             cds=self.cds_edges,
             column_name=None,
-            palette=Amira_LABELS256,
+            palette=DEFAULT_EDGE_PALETTE,
             mode=FactorMap.Mode.CYCLE
         )
 
@@ -151,7 +158,7 @@ class Application(object):
 
         #: Slider for adjusting the glyph size.
         self.ui_slider_size = bokeh.models.Slider(
-            title="Size", start=10, end=40, value=12, step=1,
+            title="Size", start=1, end=40, value=12, step=1,
             show_value=False
         )
 
@@ -188,6 +195,7 @@ class Application(object):
             title="Font Size", start=8, end=32, value=11, step=1,
             show_value=False
         )
+        self.ui_slider_font_size.visible = False
 
 
         # -- Views --

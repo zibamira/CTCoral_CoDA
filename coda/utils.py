@@ -82,6 +82,29 @@ def is_rgba_column(col):
     return col.str.fullmatch(re_rgba).all()
 
 
+def rgb_to_hex(value):
+    """Converts the rgb tuple value ``(red, green, blue)`` to its corresponding
+    hex value.
+    """
+    r, g, b, *_ = value
+    r = max(0, min(255, int(256.0*r)))
+    g = max(0, min(255, int(256.0*g)))
+    b = max(0, min(255, int(256.0*b)))
+    return f"#{r:02X}{g:02X}{b:02X}"
+
+
+def matplotlib_palette(name: str):
+    """Returns the palette of the matplotlib colormap with the name *name*.
+    
+    .. code-block::
+
+        DEFAULT_PALETTE = matplotlib_palette("Set2")
+    """
+    cmap = matplotlib.colormaps[name]
+    palette = cmap.colors
+    return [rgb_to_hex(color) for color in palette]
+
+
 def is_color_column(col):
     """Returns true if the column contains hexcoded RGB or RGBA data."""
     return is_rgb_column(col) or is_rgba_column(col)
