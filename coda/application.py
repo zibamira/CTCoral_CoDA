@@ -39,9 +39,10 @@ def init_logging():
 
 
 #: The default palette for the colormap.
-DEFAULT_VERTEX_PALETTE = Amira_LABELS256[1:]
-DEFAULT_EDGE_PALETTE = Amira_LABELS256
-# DEFAULT_PALETTE = coda.utils.matplotlib_palette("Set2")
+# DEFAULT_VERTEX_PALETTE = Amira_LABELS256[1:]
+# DEFAULT_EDGE_PALETTE = Amira_LABELS256
+DEFAULT_VERTEX_PALETTE = coda.utils.matplotlib_palette("Set3")
+DEFAULT_EDGE_PALETTE = coda.utils.matplotlib_palette("Set3")
 
 
 class Application(object):
