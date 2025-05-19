@@ -1,4 +1,4 @@
-# Coda - The Codal Explorer
+# Coda - The Coral Dendroid Structure Analyzer
 
 ~ [Installation](#installation)
 ~ [Usage](#usage)
