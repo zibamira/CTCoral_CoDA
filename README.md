@@ -6,52 +6,79 @@
 ~ [Visualization](#visualization)
 ~ [Custom Tools](#custom-tools)
 ~ [Nice to Have](#nice-to-have)
-~ [Rationale](#rationale)
 ~ [ToDo](#todo)
+~ [Rationale](#rationale)
+~ [License](#license)
 ~
 
-This Python package implements *Coda - The Codal Explorer* application. An interactive link-and-brush tool with a real-time interface to Amira. It allows a fast visualization and exploration of cold-water corals, but doubles down as a general non-application specific explorative analysis tool.
+This Python package implements *CoDA - The Coral Dendroid Structure Analyzer* application. 
+An interactive link-and-brush tool with a real-time interface to Amira. 
+It allows a fast visualization and exploration of cold-water corals (CWC), but doubles down as a general non-application specific explorative analysis tool.
+A simple, open source 3D viewer based on [PyVista](https://docs.pyvista.org/) is available in our [CoDA-PyVista](https://github.com/zibamira/CTCoral_CoDA_PyVista) repository.
+
+Please cite the following preprint if you are using CoDA in your research:
+>   https://doi.org/10.48550/arXiv.2406.18236
+
+![CoDA gallery](docs/coda_gallery.png)
 
 
 ## Installation
 
-Coda requires some external tools and libraries which must be installed first.
-```property
-$ apt install python3 python3-pip git graphviz
+CoDA requires some external tools and libraries which must be installed first.
+```shell
+$ sudo apt install python3 python3-pip git graphviz
 ```
 
-The easiest way to get started is by installing Coda into your local Python environment. 
-```property
-$ pip3 install --user https://github.com/AdorablePotato/coda
+The easiest way to get started is by installing CoDA into your local Python environment. 
+```shell
+$ pip3 install --user https://github.com/zibamira/CTcoral_CoDA
 ```
 
-You can check if everything worked by starting Coda with some random data.
-```property
+You can check if everything worked by starting CoDA with some random data.
+```shell
 $ python3 -m coda --start-browser random
 ```
 
 
 ## Usage
 
-Coda was made for visualizing attributes defined on a graph. In a coral colony, the graph describes the framework. A coral (calice + corallite) would be a vertex and the connections describing ancestry the edges. A vertex could, for example, have a volume, length and weight attribute. Similarly, the edges may store the angle between parent and child, the length between both and the distances between them.
+CoDA was made for visualizing attributes defined on a graph. 
+In a coral colony, the graph describes the mother-daughter relationships.
+A coral (calice/corallite) is represented by a vertex and the directed edges point from mother corallite/calyx to daughter corallite/calyx.
 
-Now, get your spreadsheets and perhaps some label fields ready. Coda distinguishes between two types of data:
+The vertices and edges are annotated with features computed for the associated objects.
+For example, a vertex could have a volume, length and weight attribute. 
+Similarly, the edges may store the angle between parent and child, the length between both and the distances between their centers.
+
+CoDA distinguishes between two types of data:
 *   **Vertex Data**\
-    This data is given for each sample of your data. Usually, it is just a row in a spreadsheet.
+    The vertex data is given by one or multiple *.csv* spreadsheets.
+    You can combine multiple spreadsheets as long as they have the same number of rows.
+    A vertex in two spreadsheets is the same if the row index is the same.
 *   **Edge Data**\
-    This data links two vertices and contains features describing the relationship between the vertices. The resulting graph structure can be visualized in Coda.
+    Similarly to the vertex data, edge data is given by one or multiple *.csv* spreadsheets.
+    You can combine multiple spreadsheets as long as they have the same number of rows, i.e. the same number of edges.
+    An edge in two spreadsheets is the same if the row index is the same.
+    At least one spreadsheet should have a *start* (source id) column with the row index of the start vertex and an *end* (target id) column with the row index of the end vertex.
+    Within CoDa, the resulting graph can be visualized using the *Graphviz* library.
 
-You can pass the spreadsheets as command line arguments and launch the browser directly:
-```property
-$ python3 run.py --vertex label_analysis.csv --edge adjacency_graph.csv --vertex-field label_field.npy --start-browser
+You can pass the respective spreadsheets as command line arguments and launch the browser directly:
+```shell
+$ python3 -m coda --start-browser filesystem
+    --vertex data/A2W/vertex_calices.Label-Analysis.csv
+    --vertex data/A2W/vertex_corallites.Label-Analysis.csv
+    --edge data/A2W/edge_framework.am.csv
 ```
 
-Coda will attempt to reload the dataframes automatic every time a modification occurs. Eventually, you can reload manually by using the *Reload* button in the Browser UI.
+CoDA will attempt to reload the spreadsheets automatic every time a modification occurs. 
+Eventually, you can reload manually by using the *Reload* button in the Browser UI.
 
 
 ## Amira
 
-Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy `.npy` files with the *HxCoda* package. Use the following modules to store your Amira data of interest automatic in an folder that is accessible by Coda.
+Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy `.npy` files with the [hxcoda](https://github.com/zibamira/CTcoral_hxcoda) package. 
+The package is available in the *Amira ZIBEdition*.
+Use the following modules to store your Amira data of interest automatic in an folder that is accessible by CoDA.
 
 *   **Coda Vertex (HxCodaVertexData)** \
     Exports the attached Amira data object as *vertex* data.\
@@ -69,21 +96,29 @@ Amira makes it possible to export all relevant data as CSV spreadsheets or Numpy
     Exports the attached Amira data object's edge *and* vertex attributes.\
     Supports *HxSpatialGraph*.
 
-You can launch Coda either directly from within Amira by using the *Launch* button in one of these modules. 
+You can launch CoDA either directly from within Amira by using the *Launch* button in one of these modules. 
 
-If that does not work, you can still connect manually. Amira will create a temporary folder where all exported spreadsheets are stored. This folder is visible in any of the *hxcoda* modules. Copy the path and launch Coda:
-
-```bash
-$ ls /tmp | grep amira_coda_*
+If that does not work, you can still connect manually. 
+Amira will create a temporary folder where all exported spreadsheets are stored. 
+This folder is visible in any of the *hxcoda* modules. 
+You can copy the path and provide it explicitly to CoDa.
+```shell
+> ls /tmp | grep amira_coda_*
 amira_coda_Untitled_c8vTVF
-amira_coda_C1W_qz5qvv
-$ python3 run.py --start-browser amira /tmp/amira_coda_Untitled_c8vTVF/ 
+> python3 -m coda --start-browser amira --directory /tmp/amira_coda_Untitled_c8vTVF/ 
+```
+
+You can also let CoDA guess the shared folder automatic:
+However, this may not work properly if you have multiple Amira instances running.
+```shell
+> python3 -m coda -start-browser amira
 ```
 
 
 ## Visualization
 
-Coda is based on the Bokeh visualization framework and provides an extensive, interactive linke and brushing UI. You can choose between several visualizations:
+CoDA is based on the Bokeh visualization framework and provides an extensive, interactive linke and brushing UI. 
+You can choose between several visualizations:
 
 *   **Spreadsheet**\
     Shows the raw data in a spreadsheet.
@@ -107,12 +142,13 @@ Coda is based on the Bokeh visualization framework and provides an extensive, in
 
 ## Custom Tools
 
-Coda comes with custom Bokeh tools that are implemented via JavaScript, so that they will run in the frontend rather than the backend. The usage requires that the user has a NodeJs 14.0 or higher installed.
+CoDA comes with custom Bokeh tools that are implemented via JavaScript, so that they will run in the frontend rather than the backend. 
+The usage requires that the user has a NodeJs 14.0 or higher installed.
 
 You can use NVM (Node Version Manager) to make sure that you have a compatible version installed. The LTS version should work but if you experience problems, then you may need to check BokehJs for it's latest compatible version and use that one.
-```
-nvm install --lts
-nvm use --lts
+```shell
+> nvm install --lts
+> nvm use --lts
 ```
 
 
@@ -120,40 +156,48 @@ nvm use --lts
 
 Some things did not make it into Coda yet. 
 
-*   Legends\
-    Eventually add a legend for the color and marker factor maps. The rows in the 
-    spreadsheet view could also be colored accordingly.
-*   HistogramView\
-    Add classical boxplot features like whiskers, min max
-    and outlier views. 
-*   ImageView and Thumbnails\
-    Add a column to the data frame with the paths to images for each sample. The ImageView shows a grid with the thumbnails of the current selection and the thumbnails may also be attached to the hover tool.
-*   3D Point Clouds\
+*   **Legends**\
+    Eventually add a legend for the color and marker factor maps. 
+    The rows in the spreadsheet view could also be colored accordingly.
+*   **HistogramView**\
+    Add classical boxplot features like whiskers, min max and outlier views. 
+*   **ImageView and Thumbnails**\
+    Add a column to the data frame with the paths to images for each sample. 
+    The ImageView then shows a grid with the thumbnails of the current selection and the thumbnails may also be attached to the hover tool.
+*   **3D Point Clouds**\
     This could help to identify clusters in 3D, not relying only on 2D scatter plots.
-*   Isomorphic 2D Graph Layout\ 
+*   **Isomorphic 2D Graph Layout**\ 
     Use the Buddy-Angles to create an isomorphic as possible 2D graph layout of the Codal framework.
-*   Throttle/Debounce frequent updates\
-    The histogram update in the SPLOM view must not necessarily be interactive, a short delay is ok. Similarly, the aggreagation in the FlowerView component may also be throttled. I think the best approach would be to create a global worker queue class (background thread) and a work queue. The views can push new jobs onto the worker and the worker schedules the "done" callback in the io loop. This worker could and should be used by the PCA, UMAP, Histogram and Flower views.
-*   Propagate new columns\
-    When a view, e.g. PCA or UMAP, add a new column to the dataframe, signalize the addition to other components so that they can update their UI.
-*   A LICENSE file
-*   A CITATION.cff file
 
 
 ## Rationale
 
 This section contains some design rationales and also why I decided against some features.
 
-*   **Why No Filter Widgets?**\
-    Filter widgets usually work with range widgets or select menu. The range based filtering can be done with the BoxSelection tool and the select menu similarly in the scatter plot view. So it was not worth the trouble adding these widgets when they are not as easy to use. After all, the mouse tools allow for a better interactive approach.
 *   **Reloading and Delayed Update Process**\
-    Handling the reloading in a stable manner is a bit tricky. The multi-stage process looks roughly like this:
-    *   The data provider detects a change and notifies the Coda application.
+    Handling the reloading in a stable manner is a bit tricky. 
+    The multi-stage process looks roughly like this:
+    *   The data provider detects a change and notifies the CoDA application.
     *   An automatic reload is triggered or the user is notified.
-    *   Coda sets the *is_reloading* flag to *True*.
+    *   CoDA sets the *is_reloading* flag to *True*.
     *   The data provider reloads the data.
     *   The views and helpers updated additional render information and store them in the data frames *df* and *df_edges.
     *   The Bokeh column data sources are updated with the content in the *df* and *df_edges* data frames.
     *   The views update the plots to account for the new data if needed.
     *   The reload is done and Coda sets the *is_reloading* flag to *False*.
 
+
+## References
+
+*   The CoDA preprint. \
+    https://doi.org/10.48550/arXiv.2406.18236
+*   The CoDA repository. \
+    https://github.com/zibamira/CTcoral_CoDA
+*   The A2W dataset, published on Panges. \
+    https://doi.pangaea.de/10.1594/PANGAEA.969578 \
+    https://doi.pangaea.de/10.1594/PANGAEA.969464
+
+
+## License
+
+This project is released under the [MIT License](LICENSE).

@@ -69,28 +69,3 @@ class RandomDataProvider(DataProvider):
         self.df_edges = df_edges
         self.notify_change()
         return None
-
-    # def write_vertex_selection(self, indices):
-    #     print("-- begin: vertex selection --")
-    #     print(indices)
-    #     print("-- end: vertex selection --")
-    #     return None
-
-    # def write_edge_selection(self, indices):
-    #     print("-- begin: edge selection --")
-    #     print(indices)
-    #     print("-- end: edge selection --")
-    #     return None
-
-    # def write_vertex_colormap(self, colors):
-    #     print("-- begin: vertex colormap --")
-    #     print(colors)
-    #     print("-- end: vertex colormap --")
-    #     return None
-
-    # def write_edge_colormap(self, colors):
-    #     print("-- begin: edge colormap --")
-    #     print(colors)
-    #     print("-- end: edge colormap --")
-    #     return None
-        
